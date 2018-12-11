@@ -25,13 +25,21 @@ Will execute the *executeFn* in interval of *intervalToSubmit* and submit the re
  * **intervalToSubmit** time to delay until next function trigger;
  * **executeFn** a function which returns the string that will be sent over MQTT;
 
+`executeFn(String const & topic, SettingsManager & settings)`
+ * **topic** MQTT topic;
+ * **settings** settings object(see [SettingsManager](https://github.com/SergiuToporjinschi/settingsmanager)); 
+
 ## **addInputEventHandler**
 `
 addInputEventHandler(<string mqttTopic>, <function onCall>)
 `
 Creates a listener on a specific MQTT topic and will execute the *onCall* when something has been submitted;
  * **mqttTopic** a string with MQTT topic;
- * **onCall** a function which returns void;
+ * **onCall** a void function;
+
+`onCall(String const & msg, SettingsManager & settings)`
+* **msg** message received on MQTT;
+* **settings** settings object(see [SettingsManager](https://github.com/SergiuToporjinschi/settingsmanager)); 
 
 ## createConnections;
 `
