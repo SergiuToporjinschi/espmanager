@@ -18,24 +18,32 @@ class ESPManager {
     ESPManager ();
     ~ESPManager();
     void createConnections(JsonObject wlanConf, JsonObject mqttConf);
+    const char * getVersion() {
+      return version;
+    }
     //    void loopIt();
-    //    String getVersion();
     //    void addInputEventHandler(String topic, eventHandler handler);
     //    void addOutputEventHandler(String topic, long loopTime, outputHandlerType handler);
     //    String getStrSetting(String property);
     //    int getIntSetting(String property);
     //    long getLongSetting(String property);
   private:
-    char * version = "2.0.0";
+    const char * version = "2.0.0";
+    bool retainMsg = false;
     WiFiClient net;
     JsonObject _wlanConf;
     JsonObject _mqttConf;
     MQTTClient mqttCli;
     WiFiMode wifiMode;
+    bool sendOfflineStatus; //Sends a retain message for registering stauts
     void connectToWifi();
     void waitForWiFi();
     void debugWiFiStatus();
     void setupMQTT();
+    void setOfflineStatusMessage();
+    void setOnlineStatusMessage();
+    void connectToMQTT();
+    void disconnectWifi();
 
     //    Binding<String &, String &> *cbBind = nullptr;
     //    typedef void (ESPManager::*cmdFn)(String);
@@ -49,22 +57,13 @@ class ESPManager {
     //    std::map <String, cmdFn> commands;
     //    std::map <String, eventHandler> inputEvents;
     //    std::map <String, outputTimerHandler> outputEvents;
-    //    String settingsFileName;
     //
-    //    int qos;  //Quality of service
     //    int ltpm = 0; //Last time publish message
-    //    int sendStatus; //Sends a retain message for registering stauts
     //
     //    void connect(String payload);
-    //    void readSettings();
     //
-    //    void connectToMQTT();
-    //    void setOfflineStatusMessage(String messageFormat);
-    //    void setOnlineStatusMessage(String messageFormat);
-    //    void disconnectWifi();
     //    void subscribeTopics();
     //    void messageReceived(String &topic, String &payload);
-    //    String replacePlaceHolders(String stringToReplace);
     //
     //    void saveSettings(String payload);
     //    void updateEsp(String payload);

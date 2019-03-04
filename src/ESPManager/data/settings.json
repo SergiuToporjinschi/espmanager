@@ -1,39 +1,27 @@
 {
- "esp" : {
-	"delayTime": 300
- },
- "wlan": {
-	"hostName": "hostName of esp",
-	"ssid": "network sidd ",
-	"password": "network password"
- },
- "mqtt": {
-	"clientId": "mqttClientid",
-	"server": "mqtt server ip",
-	"port": "9999",
-	"user": "user mqtt",
-	"password": "password mqtt",
-	"sendOfflineStatus": true,
-	"qos": 2,
-	"status": {
-		"topic": "topic for status"
-	},
-	"internalTopics" : {
-		"update": "update topic",
-		"settings": "Settings topic",
-		"cmd": "somthing/cmd"
-	}
- },
- "ledPin":13,
- "charTestN": 84,
- "charTest": "t",
- "floatTest": 12.33,
- "doubleTest": 32.3223,
- "boolTest": true,
- "sketchVersion":"1.0",
- "updateServer":"url for update",
- "process": {
-	"topic": "other topic",
-	"interval": 1000
- }
+  "wlan":{
+    "hostName":"espTest",
+    "ssid":"zDay",
+    "password":"WiFi4MeToo"
+  },
+  "mqtt":{
+    "clientId":"SkyNet-Test",
+    "server":"192.168.100.100",
+    "port":"1888",
+    "user":"toporjinschi",
+    "password":"inter781metro",
+    "sendOfflineStatus":true,
+	"retainMessage": true,
+    "qos":2,
+    "topics":{
+      "update":"IOT/espTest/update",
+      "settings":"IOT/espTest/settings",
+      "cmd":"IOT/espTest/cmd",
+      "status":"IOT/espTest/status"
+    }
+  },
+  "submitData":{
+    "topic":"env/bedroom/sc",
+    "interval":1000
+  }
 }

@@ -1,5 +1,5 @@
-#define DEBUG_PRINTLN(x) Serial.println(x)
-#define DEBUG_PRINT(x) Serial.print(x)
+#define DBGLN(x) Serial.println(x)
+#define DBG(x) Serial.print(x)
 
 
 #include "ESPManager.h"
@@ -13,7 +13,7 @@ ESPManager::ESPManager() {
   wifiMode = WIFI_STA;
 
   //  cbBind = new Binding<String &, String &>(*this, &ESPManager::messageReceived);
-  //  DEBUG_PRINTLN("Last restart reson: " + ESP.getResetReason());
+  //  DBGLN("Last restart reson: " + ESP.getResetReason());
   //  commands["reconnect"] = &ESPManager::cmdReconnect;
   //  commands["config"] = &ESPManager::cmdConfig;
   //  commands["restart"] = &ESPManager::cmdRestart;
@@ -21,39 +21,36 @@ ESPManager::ESPManager() {
   //  commands["getInfo"] = &ESPManager::getInfo;
   //  readSettings();
 }
-//String ESPManager::getVersion() {
-//  return version;
-//}
-///**
-//   ---==[ This needs to be call in setup function ]==---
-//   Creates connection to WiFi;
-//   Set-up MQTT;
-//   Wait to be connected to WiFi
-//   Connects to MQTT server
-//   Subscribe to MQTT topics set in config
-//
-//*/
+
+/**
+   ---==[ This needs to be call in setup function ]==---
+   Creates connection to WiFi;
+   Set-up MQTT;
+   Wait to be connected to WiFi
+   Connects to MQTT server
+   Subscribe to MQTT topics set in config
+
+*/
 void ESPManager::createConnections(JsonObject wlanConf, JsonObject mqttConf) {
   _wlanConf = wlanConf;
   _mqttConf = mqttConf;
+  sendOfflineStatus = _mqttConf.getMember("sendOfflineStatus").as<bool>();
+  retainMsg = _mqttConf.getMember("retainMessage").as<bool>();
   connectToWifi();
   setupMQTT();
-  //  if (sendStatus) {
-  //    setOfflineStatusMessage(settings.getString("mqtt.status.format"));
-  //  }
-  //  connectToMQTT();
-  //  if (sendStatus) {
-  //    setOnlineStatusMessage(settings.getString("mqtt.status.format"));
-  //  }
+  connectToMQTT();
+  if (sendOfflineStatus) {
+    setOnlineStatusMessage();
+  }
   //  subscribeTopics();
 }
 /**
    Create connection to WiFi based on settings.wlan if curent status is not connected and waits for connection to be made;
 */
 void ESPManager::connectToWifi() {
-  DEBUG_PRINTLN("Connecting WiFi...");
+  DBGLN("Connecting WiFi...");
   if (WiFi.status() == WL_CONNECTED) {
-    DEBUG_PRINT("Is already connected: "); DEBUG_PRINTLN(WiFi.status());
+    DBG("Is already connected: "); DBGLN(WiFi.status());
     return;
   }
   debugWiFiStatus();
@@ -70,14 +67,15 @@ void ESPManager::connectToWifi() {
 void ESPManager::waitForWiFi() {
   int waitingTime = millis();
   while (WiFi.status() != WL_CONNECTED && millis() - waitingTime  < 30000) {
-    DEBUG_PRINT("#");
+    DBG("#");
     delay(100);
   }
-  DEBUG_PRINTLN("");
+  DBGLN("");
   if (WiFi.status() != WL_CONNECTED) {
     debugWiFiStatus();
     ESP.restart();
   }
+  DBG("IP: "); DBGLN(WiFi.localIP().toString());
 }
 
 /**
@@ -86,7 +84,7 @@ void ESPManager::waitForWiFi() {
 void ESPManager::debugWiFiStatus() {
   int wiFiStatus = WiFi.status();
   if (wiFiStatus != WL_CONNECTED) {
-    DEBUG_PRINT("WiFi status: "); DEBUG_PRINTLN(wiFiStatus);
+    DBG("WiFi status: "); DBGLN(wiFiStatus);
   }
 }
 
@@ -94,17 +92,85 @@ void ESPManager::debugWiFiStatus() {
    Is setting-up the MQTT client baaed on settings.mqtt;
 */
 void ESPManager::setupMQTT() {
-  
   const char* mqttServer = _mqttConf.getMember("server").as<const char*>();
   int mqttPort = _mqttConf.getMember("port").as<int>();
 
-  DEBUG_PRINT("Setting MQTT: "); DEBUG_PRINT(mqttServer); DEBUG_PRINT("; port: "); DEBUG_PRINT(mqttPort);
+  DBG("Setting MQTT: "); DBG(mqttServer); DBG("; port: "); DBGLN(mqttPort);
   mqttCli.begin(mqttServer, mqttPort, net);
+
   //  mqttCli.onMessage(cbBind->callback); //TODO de implementat
-  DEBUG_PRINTLN("Finish setupMQTT");
+
+  DBG("SendOfflineStatus: "); DBGLN(sendOfflineStatus);
+  if (sendOfflineStatus) {
+    setOfflineStatusMessage();
+  }
+
+  DBGLN("Finish setupMQTT");
 }
 
-//
+/**
+   Configuring status message as offline
+*/
+void ESPManager::setOfflineStatusMessage() {
+  const char * topicStatus = _mqttConf.getMember("topics").getMember("status").as<const char*>();
+
+  char * format = "{\"name\":\"%s\", \"status\":\"%s\"}";
+  char msg[100] = {0};
+
+  snprintf(msg, 99, format, _wlanConf.getMember("hostName").as<char*>(), "offline");
+
+  DBG("Setting offline message on topic: "); DBG(topicStatus); DBGLN(" content: ");
+  DBGLN(msg);
+
+  mqttCli.clearWill();
+  mqttCli.setWill(topicStatus, msg, true, 2);
+}
+
+/**
+   Configuring status message as online and publish it
+*/
+void ESPManager::setOnlineStatusMessage() {
+  const char * topicStatus = _mqttConf.getMember("topics").getMember("status").as<const char*>();
+
+  char * format = "{\"name\":\"%s\", \"status\":\"%s\"}";
+  char msg[100] = {0};
+
+  snprintf(msg, 99, format, _wlanConf.getMember("hostName").as<char*>(), "online");
+
+  DBG("Setting offline message on topic: "); DBG(topicStatus); DBGLN(" content: ");
+  DBGLN(msg);
+
+  mqttCli.publish(topicStatus, format, true, 2);
+}
+
+/**
+   Connects on MQTT with credentials from settings.mqtt;
+*/
+void ESPManager::connectToMQTT() {
+  DBGLN("Connecting mqtt...");
+  const char * clientId = _mqttConf.getMember("clientId").as<const char*>();
+  const char * user = _mqttConf.getMember("user").as<const char*>();
+  const char * password = _mqttConf.getMember("password").as<const char*>();
+
+  DBGLN("Client: "); DBG(clientId); DBG("; User: ");  DBG(user); DBG("; Password: "); DBGLN(password);
+  while (!mqttCli.connect(clientId, user, password)) {
+    DBG("_");
+    delay(1000);
+  }
+  DBGLN("");
+  DBGLN("Connected!");
+}
+
+/**
+   Disconnects wifi and is putting it on sleep;
+*/
+void ESPManager::disconnectWifi() {
+  WiFi.disconnect();
+  WiFi.mode(WIFI_OFF);
+  WiFi.forceSleepBegin();
+};
+
+
 ///**
 //   ---==[ This needs to be call in setup function ]==---
 //   Loops the entire process;
@@ -115,7 +181,7 @@ void ESPManager::setupMQTT() {
 //  delay(settings.getInt("esp.delayTime"));  // <- fixes some issues with WiFi stability
 //
 //  if (WiFi.status() != WL_CONNECTED || !mqttCli.connected()) {
-//    DEBUG_PRINTLN("Not connected to MQTT reconnect ...");
+//    DBGLN("Not connected to MQTT reconnect ...");
 //    cmdReconnect("");
 //  }
 //
@@ -123,7 +189,7 @@ void ESPManager::setupMQTT() {
 //    String key = it->first;
 //    if (millis() - outputEvents[key].lastTime > outputEvents[key].timing) {
 //      String output = outputEvents[key].handler(key, settings);
-//      DEBUG_PRINTLN("publishing to topic: " + key + "- time:" + outputEvents[key].timing + "; output: " + output );
+//      DBGLN("publishing to topic: " + key + "- time:" + outputEvents[key].timing + "; output: " + output );
 //      output.trim();
 //      outputEvents[key].lastTime = millis();
 //      if (output.length() > 0) {
@@ -132,51 +198,11 @@ void ESPManager::setupMQTT() {
 //    }
 //  }
 //}
-//
-
-//
-
-//
 
 
-//
-///**
-//   Connects on MQTT with credentials from settings.mqtt;
-//*/
-//void ESPManager::connectToMQTT() {
-//  DEBUG_PRINTLN("Connecting mqtt...");
-//  DEBUG_PRINTLN("Client: " + String(settings.getChar("mqtt.clientId")) + "; User: " + String(settings.getChar("mqtt.user")) + "; Password: " + String(settings.getChar("mqtt.password")));
-//  while (!mqttCli.connect(settings.getChar("mqtt.clientId"), settings.getChar("mqtt.user"), settings.getChar("mqtt.password"))) {
-//    DEBUG_PRINT("_");
-//    delay(1000);
-//  }
-//  DEBUG_PRINTLN("");
-//  DEBUG_PRINTLN("Connected!");
-//}
-//
-///**
-//   Configuring status message as offline
-//*/
-//void ESPManager::setOfflineStatusMessage(String messageFormat) {
-//  static String top = replacePlaceHolders(settings.getString("mqtt.topic.status"));
-//  static String msg = replacePlaceHolders(messageFormat);
-//  msg.replace("<MQTTStatus>", "offline");
-//  DEBUG_PRINTLN("Setting offline message on topic: " + top + " content: " + msg);
-//  mqttCli.clearWill();
-//  mqttCli.setWill(top.c_str(), msg.c_str(), true, qos);
-//}
-//
-///**
-//   Configuring status message as online and publish it
-//*/
-//void ESPManager::setOnlineStatusMessage(String messageFormat) {
-//  String topic = replacePlaceHolders(settings.getString("mqtt.topic.status"));
-//  messageFormat = replacePlaceHolders(messageFormat);
-//  messageFormat.replace("<MQTTStatus>", "online");
-//  DEBUG_PRINTLN("Setting online message on topic: " + topic + " content: " + messageFormat);
-//  mqttCli.publish(topic, messageFormat, true, qos);
-//}
-//
+
+
+
 ///**
 //   Subscribes to topics specified in settings.mqtt.topic;
 //*/
@@ -196,7 +222,7 @@ void ESPManager::setupMQTT() {
 //  };
 //  for (std::map<String, eventHandler>::iterator it = inputEvents.begin(); it != inputEvents.end(); ++it) {
 //    String key = it->first;
-//    DEBUG_PRINTLN("Subscribing to topic: " + key);
+//    DBGLN("Subscribing to topic: " + key);
 //    mqttCli.subscribe(key, qos);
 //  }
 //}
@@ -209,7 +235,7 @@ void ESPManager::setupMQTT() {
 //   param @payload = payload, message
 //*/
 //void ESPManager::messageReceived(String &topic, String &payload) {
-//  DEBUG_PRINTLN("Incoming: " + topic + " - " + payload);
+//  DBGLN("Incoming: " + topic + " - " + payload);
 //  Serial.flush();
 //  String cmdTopic = replacePlaceHolders(settings.getString("mqtt.topic.cmd"));
 //  String settingsTopic = replacePlaceHolders(settings.getString("mqtt.topic.settings"));
@@ -231,29 +257,10 @@ void ESPManager::setupMQTT() {
 //  stringToReplace.replace("<hostName>", hostName);
 //  return stringToReplace;
 //};
-///**
-//   Reads settings from settings file;
-//*/
-//void ESPManager::readSettings() {
-//  settings.readSettings(settingsFileName);
-//}
-//
-//String ESPManager::getStrSetting(String property) {
-//  return settings.getString(property);
-//};
-//
-//int ESPManager::getIntSetting(String property) {
-//  return settings.getInt(property);
-//};
-//
-//long ESPManager::getLongSetting(String property) {
-//  return settings.getLong(property);
-//};
-//
 //void ESPManager::addInputEventHandler(String topic, eventHandler handler) {
 //#ifndef DEBUG_SERIAL
 //  if (topic.length() <= 0) {
-//    DEBUG_PRINTLN("To subscribe, topic is mandatory");
+//    DBGLN("To subscribe, topic is mandatory");
 //  }
 //#endif
 //  inputEvents[replacePlaceHolders(topic)] = handler;
@@ -263,14 +270,7 @@ void ESPManager::setupMQTT() {
 //  outputEvents[replacePlaceHolders(topic)] = {handler, loopTime};
 //};
 //
-///**
-//   Disconnects wifi and is putting it on sleep;
-//*/
-//void ESPManager::disconnectWifi() {
-//  WiFi.disconnect();
-//  WiFi.mode(WIFI_OFF);
-//  WiFi.forceSleepBegin();
-//};
+
 //
 ///**
 //    --------========[       Commands       ]========--------
@@ -288,7 +288,7 @@ void ESPManager::setupMQTT() {
 //   Serializing the settings and submit them in mqtt;
 //*/
 //void ESPManager::updateEsp(String payload) {
-//  DEBUG_PRINT("Update triggered");
+//  DBG("Update triggered");
 //  String type = payload.substring(0, payload.indexOf(","));
 //  String ver = payload.substring(payload.indexOf(",") + 1);
 //  String updateLink = replacePlaceHolders(settings.getString("updateServer"));
@@ -300,16 +300,16 @@ void ESPManager::setupMQTT() {
 //  }
 //  switch (ret) {
 //    case HTTP_UPDATE_FAILED:
-//      DEBUG_PRINTLN("HTTP_UPDATE_FAILD Error: " + String(ESPhttpUpdate.getLastError()) + " - " + ESPhttpUpdate.getLastErrorString());
-//      DEBUG_PRINTLN();
+//      DBGLN("HTTP_UPDATE_FAILD Error: " + String(ESPhttpUpdate.getLastError()) + " - " + ESPhttpUpdate.getLastErrorString());
+//      DBGLN();
 //      break;
 //
 //    case HTTP_UPDATE_NO_UPDATES:
-//      DEBUG_PRINTLN("HTTP_UPDATE_NO_UPDATES");
+//      DBGLN("HTTP_UPDATE_NO_UPDATES");
 //      break;
 //
 //    case HTTP_UPDATE_OK:
-//      DEBUG_PRINTLN("HTTP_UPDATE_OK");
+//      DBGLN("HTTP_UPDATE_OK");
 //      if (type == "spiffs") {
 //        mqttCli.disconnect();
 //        disconnectWifi();
