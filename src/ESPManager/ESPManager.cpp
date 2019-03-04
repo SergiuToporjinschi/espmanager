@@ -8,11 +8,12 @@ ADC_MODE(ADC_VCC);
    param @fileName the name/path of the settings file;
    param @qos the quality of service level;
 */
-ESPManager::ESPManager(JsonObject wlanConf, JsonObject mqttConf) : _wlanConf(wlanConf), _mqttConf(mqttConf){
+ESPManager::ESPManager() {
+  mqttCli = *new MQTTClient(800);
+  wifiMode = WIFI_STA;
+
   //  cbBind = new Binding<String &, String &>(*this, &ESPManager::messageReceived);
-  //  mqttCli = *new MQTTClient(800);
   //  DEBUG_PRINTLN("Last restart reson: " + ESP.getResetReason());
-  //  wifiMode = WIFI_STA;
   //  commands["reconnect"] = &ESPManager::cmdReconnect;
   //  commands["config"] = &ESPManager::cmdConfig;
   //  commands["restart"] = &ESPManager::cmdRestart;
@@ -32,18 +33,77 @@ ESPManager::ESPManager(JsonObject wlanConf, JsonObject mqttConf) : _wlanConf(wla
 //   Subscribe to MQTT topics set in config
 //
 //*/
-//void ESPManager::createConnections() {
-//  connectToWifi();
-//  setupMQTT();
-//  if (sendStatus) {
-//    setOfflineStatusMessage(settings.getString("mqtt.status.format"));
-//  }
-//  connectToMQTT();
-//  if (sendStatus) {
-//    setOnlineStatusMessage(settings.getString("mqtt.status.format"));
-//  }
-//  subscribeTopics();
-//}
+void ESPManager::createConnections(JsonObject wlanConf, JsonObject mqttConf) {
+  _wlanConf = wlanConf;
+  _mqttConf = mqttConf;
+  connectToWifi();
+  setupMQTT();
+  //  if (sendStatus) {
+  //    setOfflineStatusMessage(settings.getString("mqtt.status.format"));
+  //  }
+  //  connectToMQTT();
+  //  if (sendStatus) {
+  //    setOnlineStatusMessage(settings.getString("mqtt.status.format"));
+  //  }
+  //  subscribeTopics();
+}
+/**
+   Create connection to WiFi based on settings.wlan if curent status is not connected and waits for connection to be made;
+*/
+void ESPManager::connectToWifi() {
+  DEBUG_PRINTLN("Connecting WiFi...");
+  if (WiFi.status() == WL_CONNECTED) {
+    DEBUG_PRINT("Is already connected: "); DEBUG_PRINTLN(WiFi.status());
+    return;
+  }
+  debugWiFiStatus();
+  WiFi.mode(wifiMode);
+  WiFi.hostname(_wlanConf.getMember("hostName").as<char*>());
+  delay(100);
+  WiFi.begin(_wlanConf.getMember("ssid").as<char*>(), _wlanConf.getMember("password").as<char*>());
+  waitForWiFi();
+}
+
+/**
+   Wait to be connected in wifi;
+*/
+void ESPManager::waitForWiFi() {
+  int waitingTime = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - waitingTime  < 30000) {
+    DEBUG_PRINT("#");
+    delay(100);
+  }
+  DEBUG_PRINTLN("");
+  if (WiFi.status() != WL_CONNECTED) {
+    debugWiFiStatus();
+    ESP.restart();
+  }
+}
+
+/**
+   Is printing connection status to WiFi if is not connected;
+*/
+void ESPManager::debugWiFiStatus() {
+  int wiFiStatus = WiFi.status();
+  if (wiFiStatus != WL_CONNECTED) {
+    DEBUG_PRINT("WiFi status: "); DEBUG_PRINTLN(wiFiStatus);
+  }
+}
+
+/**
+   Is setting-up the MQTT client baaed on settings.mqtt;
+*/
+void ESPManager::setupMQTT() {
+  
+  const char* mqttServer = _mqttConf.getMember("server").as<const char*>();
+  int mqttPort = _mqttConf.getMember("port").as<int>();
+
+  DEBUG_PRINT("Setting MQTT: "); DEBUG_PRINT(mqttServer); DEBUG_PRINT("; port: "); DEBUG_PRINT(mqttPort);
+  mqttCli.begin(mqttServer, mqttPort, net);
+  //  mqttCli.onMessage(cbBind->callback); //TODO de implementat
+  DEBUG_PRINTLN("Finish setupMQTT");
+}
+
 //
 ///**
 //   ---==[ This needs to be call in setup function ]==---
@@ -73,58 +133,12 @@ ESPManager::ESPManager(JsonObject wlanConf, JsonObject mqttConf) : _wlanConf(wla
 //  }
 //}
 //
-///**
-//   Create connection to WiFi based on settings.wlan if curent status is not connected and waits for connection to be made;
-//*/
-//void ESPManager::connectToWifi() {
-//  DEBUG_PRINTLN("Connecting WiFi...");
-//  if (WiFi.status() == WL_CONNECTED) {
-//    DEBUG_PRINTLN("Is already connected: " + String(WiFi.status()));
-//    return;
-//  }
-//  debugWiFiStatus();
-//  WiFi.mode(wifiMode);
-//  WiFi.hostname(settings.getString("wlan.hostName"));
-//  delay(100);
-//  WiFi.begin(settings.getChar("wlan.ssid"), settings.getChar("wlan.password"));
-//  waitForWiFi();
-//}
+
 //
-///**
-//   Wait to be connected in wifi;
-//*/
-//void ESPManager::waitForWiFi() {
-//  int waitingTime = millis();
-//  while (WiFi.status() != WL_CONNECTED && millis() - waitingTime  < 30000) {
-//    DEBUG_PRINT("#");
-//    delay(100);
-//  }
-//  DEBUG_PRINTLN("");
-//  if (WiFi.status() != WL_CONNECTED) {
-//    debugWiFiStatus();
-//    ESP.restart();
-//  }
-//}
+
 //
-///**
-//   Is printing connection status to WiFi if is not connected;
-//*/
-//void ESPManager::debugWiFiStatus() {
-//  int wiFiStatus = WiFi.status();
-//  if (wiFiStatus != WL_CONNECTED) {
-//    DEBUG_PRINTLN("WiFi status: " +  wiFiStatus);
-//  }
-//}
-//
-///**
-//   Is setting-up the MQTT client baaed on settings.mqtt;
-//*/
-//void ESPManager::setupMQTT() {
-//  DEBUG_PRINTLN("Setting MQTT: " + String(settings.getChar("mqtt.server")) + "; port: " + String(settings.getInt("mqtt.port")));
-//  mqttCli.begin(settings.getChar("mqtt.server"), settings.getInt("mqtt.port"), net);
-//  mqttCli.onMessage(cbBind->callback);
-//  DEBUG_PRINTLN("Finish setupMQTT");
-//}
+
+
 //
 ///**
 //   Connects on MQTT with credentials from settings.mqtt;
@@ -377,6 +391,6 @@ ESPManager::ESPManager(JsonObject wlanConf, JsonObject mqttConf) : _wlanConf(wla
 //}
 
 ESPManager::~ESPManager() {
-//  delete cbBind;
-//  delete &mqttCli;
+  //  delete cbBind;
+  //  delete &mqttCli;
 }

@@ -27,7 +27,7 @@
 
 String readTemp(String const & topic, SettingsManager & settings);
 SettingsManager conf;
-ESPManager *man;
+ESPManager man;
 
 void setup() {
   DEBUG_BEGIN;
@@ -35,7 +35,8 @@ void setup() {
   conf.readSettings("/settings.json");
   JsonObject wlanConf = conf.getJsonObject("wlan");
   JsonObject mqttConf = conf.getJsonObject("mqtt");
-  man = new ESPManager(wlanConf, mqttConf);
+  man.createConnections(wlanConf, mqttConf);
+//  man = *new ESPManager(wlanConf, mqttConf);
 //  man.addOutputEventHandler(man->getStrSetting("mqtt.topic.submitData"), man->getLongSetting("mqtt.topic.submitDataInterval"), readTemp);
 //  man.addInputEventHandler(String("testEvent"), onCall);
 //  man.createConnections();
