@@ -12,14 +12,14 @@ ESPManager::ESPManager() {
   mqttCli = *new MQTTClient(800);
   wifiMode = WIFI_STA;
 
+  commands["reconnect"] = &ESPManager::cmdReconnect;
+  commands["restart"] = &ESPManager::cmdRestart;
+  commands["reset"] = &ESPManager::cmdReset;
+  commands["getInfo"] = &ESPManager::cmdGetInfo;
+  //  commands["config"] = &ESPManager::cmdConfig;
+
   //  cbBind = new Binding<String &, String &>(*this, &ESPManager::messageReceived);
   //  DBGLN("Last restart reson: " + ESP.getResetReason());
-  //  commands["reconnect"] = &ESPManager::cmdReconnect;
-  //  commands["config"] = &ESPManager::cmdConfig;
-  //  commands["restart"] = &ESPManager::cmdRestart;
-  //  commands["reset"] = &ESPManager::cmdReset;
-  //  commands["getInfo"] = &ESPManager::getInfo;
-  //  readSettings();
 }
 
 /**
@@ -29,13 +29,15 @@ ESPManager::ESPManager() {
    Wait to be connected to WiFi
    Connects to MQTT server
    Subscribe to MQTT topics set in config
-
 */
 void ESPManager::createConnections(JsonObject wlanConf, JsonObject mqttConf) {
   _wlanConf = wlanConf;
   _mqttConf = mqttConf;
-  sendOfflineStatus = _mqttConf.getMember("sendOfflineStatus").as<bool>();
-  retainMsg = _mqttConf.getMember("retainMessage").as<bool>();
+}
+
+void ESPManager::createConnections() {
+  sendOfflineStatus = _mqttConf.getMember(F("sendOfflineStatus")).as<bool>();
+  retainMsg = _mqttConf.getMember(("retainMessage")).as<bool>();
   connectToWifi();
   setupMQTT();
   connectToMQTT();
@@ -44,6 +46,7 @@ void ESPManager::createConnections(JsonObject wlanConf, JsonObject mqttConf) {
   }
   //  subscribeTopics();
 }
+
 /**
    Create connection to WiFi based on settings.wlan if curent status is not connected and waits for connection to be made;
 */
@@ -55,7 +58,7 @@ void ESPManager::connectToWifi() {
   }
   debugWiFiStatus();
   WiFi.mode(wifiMode);
-  WiFi.hostname(_wlanConf.getMember("hostName").as<char*>());
+  WiFi.hostname(_wlanConf.getMember(F("hostName")).as<char*>());
   delay(100);
   WiFi.begin(_wlanConf.getMember("ssid").as<char*>(), _wlanConf.getMember("password").as<char*>());
   waitForWiFi();
@@ -93,7 +96,7 @@ void ESPManager::debugWiFiStatus() {
 */
 void ESPManager::setupMQTT() {
   const char* mqttServer = _mqttConf.getMember("server").as<const char*>();
-  int mqttPort = _mqttConf.getMember("port").as<int>();
+  int mqttPort = _mqttConf.getMember(F("port")).as<int>();
 
   DBG("Setting MQTT: "); DBG(mqttServer); DBG("; port: "); DBGLN(mqttPort);
   mqttCli.begin(mqttServer, mqttPort, net);
@@ -112,12 +115,10 @@ void ESPManager::setupMQTT() {
    Configuring status message as offline
 */
 void ESPManager::setOfflineStatusMessage() {
-  const char * topicStatus = _mqttConf.getMember("topics").getMember("status").as<const char*>();
-
-  char * format = "{\"name\":\"%s\", \"status\":\"%s\"}";
+  const char * topicStatus = _mqttConf.getMember(F("topics")).getMember(F("status")).as<const char*>();
   char msg[100] = {0};
 
-  snprintf(msg, 99, format, _wlanConf.getMember("hostName").as<char*>(), "offline");
+  snprintf_P(msg, 99, STATUS_FORMAT_P, _wlanConf.getMember(F("hostName")).as<char*>(), STATUS_OFFLINE_P);
 
   DBG("Setting offline message on topic: "); DBG(topicStatus); DBGLN(" content: ");
   DBGLN(msg);
@@ -130,17 +131,15 @@ void ESPManager::setOfflineStatusMessage() {
    Configuring status message as online and publish it
 */
 void ESPManager::setOnlineStatusMessage() {
-  const char * topicStatus = _mqttConf.getMember("topics").getMember("status").as<const char*>();
-
-  char * format = "{\"name\":\"%s\", \"status\":\"%s\"}";
+  const char * topicStatus = _mqttConf.getMember(F("topics")).getMember(F("status")).as<const char*>();
   char msg[100] = {0};
 
-  snprintf(msg, 99, format, _wlanConf.getMember("hostName").as<char*>(), "online");
+  snprintf(msg, 99, STATUS_FORMAT_P, _wlanConf.getMember(F("hostName")).as<char*>(), STATUS_ONLINE_P);
 
   DBG("Setting offline message on topic: "); DBG(topicStatus); DBGLN(" content: ");
   DBGLN(msg);
 
-  mqttCli.publish(topicStatus, format, true, 2);
+  mqttCli.publish(topicStatus, msg, true, 2);
 }
 
 /**
@@ -148,9 +147,9 @@ void ESPManager::setOnlineStatusMessage() {
 */
 void ESPManager::connectToMQTT() {
   DBGLN("Connecting mqtt...");
-  const char * clientId = _mqttConf.getMember("clientId").as<const char*>();
-  const char * user = _mqttConf.getMember("user").as<const char*>();
-  const char * password = _mqttConf.getMember("password").as<const char*>();
+  const char * clientId = _mqttConf.getMember(F("clientId")).as<const char*>();
+  const char * user = _mqttConf.getMember(F("user")).as<const char*>();
+  const char * password = _mqttConf.getMember(F("password")).as<const char*>();
 
   DBGLN("Client: "); DBG(clientId); DBG("; User: ");  DBG(user); DBG("; Password: "); DBGLN(password);
   while (!mqttCli.connect(clientId, user, password)) {
@@ -169,6 +168,85 @@ void ESPManager::disconnectWifi() {
   WiFi.mode(WIFI_OFF);
   WiFi.forceSleepBegin();
 };
+
+// ---==[ START Commands ]==---
+/**
+   CMD: reconnect
+   Is disconnecting MQTT client, is disconnecting from WiFi, recreats all connections again;
+*/
+void ESPManager::cmdReconnect(const char * payload) {
+  mqttCli.disconnect();
+  disconnectWifi();
+  delay(100);
+  createConnections();
+}
+
+///** // maybe is better if get this outside of manager not having the entire configuration file
+//   CMD: config
+//   Is publising all the settings on cmd channel;
+//*/
+//void ESPManager::cmdConfig(const char * payload) {
+//  //delay(10);
+//  auto allSettings = settings.getSettings();
+//  mqttCli.publish(replacePlaceHolders(settings.getString("mqtt.topic.cmd")) + "/resp", SettingsManager::stringify(allSettings), false, qos);
+//}
+
+/**
+   CMD: restart
+   Is disconnecting MQTT client, is disconnecting from WiFi, restarts the entire ESP;
+*/
+void ESPManager::cmdRestart(const char * payload) {
+  mqttCli.disconnect();
+  disconnectWifi();
+  ESP.restart();
+}
+
+/**
+   CMD: restart
+   Is disconnecting MQTT client, is disconnecting from WiFi, resets the entire ESP;
+*/
+void ESPManager::cmdReset(const char * payload) {
+  mqttCli.disconnect();
+  disconnectWifi();
+  ESP.reset();
+}
+
+/**
+   CMD: getInfo
+   Serializing the settings and submit them in mqtt;
+*/
+void ESPManager::cmdGetInfo(const char * payload) {//TODO move to char *
+  String coreVersion = ESP.getCoreVersion();
+  coreVersion.replace("_", ".");
+  String retVal = "{ \"chipId\": " + String(ESP.getChipId()) +
+                  ", \"localIP\" : \"" + WiFi.localIP().toString() + "\"" +
+                  ", \"macAddress\" : \"" + String(WiFi.macAddress()) + "\"" +
+                  ", \"lastRestartReson\" : \"" + ESP.getResetReason() + "\"" +
+                  ", \"flashChipId\" : " + String(ESP.getFlashChipId()) +
+                  ", \"coreVersion\" : \"" + coreVersion + "\"" +
+                  ", \"sdkVersion\" : \"" + ESP.getSdkVersion() + "\"" +
+                  ", \"vcc\" : " + String(ESP.getVcc() / 1024.00f) +
+                  ", \"flashChipSpeed\" : " + String(ESP.getFlashChipSpeed()) +
+                  ", \"cycleCount\" : " + String(ESP.getCycleCount()) +
+                  ", \"cpuFreq\" : " + String(ESP.getCpuFreqMHz() * 1000000) +
+                  ", \"freeHeap\": " + String(ESP.getFreeHeap()) +
+                  ", \"flashChipSize\" : " + String(ESP.getFlashChipSize()) +
+                  ", \"sketchSize\" : " + String(ESP.getSketchSize()) + "" +
+                  ", \"freeSketchSpace\" : " + String(ESP.getFreeSketchSpace()) + "" +
+                  ", \"flashChipRealSize\" : " + String(ESP.getFlashChipRealSize()) + "" +
+                  ", \"espManagerVersion\" : \"" + getVersion() + "\"" +
+                  //                  ", \"sketchVersion\" : \"" + settings.getString("sketchVersion") + "\"" +
+                  "}";
+  const char * cmdTopic = _mqttConf.getMember(F("topic")).getMember(F("cmd")).as<const char*>();
+  int qos = _mqttConf.getMember(F("qos")).as<int>();
+  char topic[100] = {0};
+
+  strcat(topic, cmdTopic);
+  strcat(topic, "/resp");
+  mqttCli.publish(topic, retVal, false, qos);
+}
+
+// ---==[ END Commands ]==---
 
 
 ///**
@@ -318,79 +396,12 @@ void ESPManager::disconnectWifi() {
 //      break;
 //  }
 //}
-//
-///**
-//   CMD: reconnect
-//   Is disconnecting MQTT client, is disconnecting from WiFi, recreats all connections again;
-//*/
-//void ESPManager::cmdReconnect(String payload) {
-//  mqttCli.disconnect();
-//  disconnectWifi();
-//  delay(100);
-//  createConnections();
-//}
-//
-//
-///**
-//   CMD: config
-//   Is publising all the settings on cmd channel;
-//*/
-//void ESPManager::cmdConfig(String payload) {
-//  delay(10);
-//  auto allSettings = settings.getSettings();
-//  mqttCli.publish(replacePlaceHolders(settings.getString("mqtt.topic.cmd")) + "/resp", SettingsManager::stringify(allSettings), false, qos);
-//}
-//
-///**
-//   CMD: restart
-//   Is disconnecting MQTT client, is disconnecting from WiFi, restarts the entire ESP;
-//*/
-//void ESPManager::cmdRestart(String payload) {
-//  mqttCli.disconnect();
-//  disconnectWifi();
-//  ESP.restart();
-//}
-//
-///**
-//   CMD: restart
-//   Is disconnecting MQTT client, is disconnecting from WiFi, resets the entire ESP;
-//*/
-//void ESPManager::cmdReset(String payload) {
-//  mqttCli.disconnect();
-//  disconnectWifi();
-//  ESP.reset();
-//}
-//
-///**
-//   CMD: getInfo
-//   Serializing the settings and submit them in mqtt;
-//*/
-//void ESPManager::getInfo(String payload) {
-//  String coreVersion = ESP.getCoreVersion();
-//  coreVersion.replace("_", ".");
-//  String retVal = "{ \"chipId\": " + String(ESP.getChipId()) +
-//                  ", \"localIP\" : \"" + WiFi.localIP().toString() + "\"" +
-//                  ", \"macAddress\" : \"" + String(WiFi.macAddress()) + "\"" +
-//                  ", \"lastRestartReson\" : \"" + ESP.getResetReason() + "\"" +
-//                  ", \"flashChipId\" : " + String(ESP.getFlashChipId()) +
-//                  ", \"coreVersion\" : \"" + coreVersion + "\"" +
-//                  ", \"sdkVersion\" : \"" + ESP.getSdkVersion() + "\"" +
-//                  ", \"vcc\" : " + String(ESP.getVcc() / 1024.00f) +
-//                  ", \"flashChipSpeed\" : " + String(ESP.getFlashChipSpeed()) +
-//                  ", \"cycleCount\" : " + String(ESP.getCycleCount()) +
-//                  ", \"cpuFreq\" : " + String(ESP.getCpuFreqMHz() * 1000000) +
-//                  ", \"freeHeap\": " + String(ESP.getFreeHeap()) +
-//                  ", \"flashChipSize\" : " + String(ESP.getFlashChipSize()) +
-//                  ", \"sketchSize\" : " + String(ESP.getSketchSize()) + "" +
-//                  ", \"freeSketchSpace\" : " + String(ESP.getFreeSketchSpace()) + "" +
-//                  ", \"flashChipRealSize\" : " + String(ESP.getFlashChipRealSize()) + "" +
-//                  ", \"espManagerVersion\" : \"" + getVersion() + "\"" +
-//                  ", \"sketchVersion\" : \"" + settings.getString("sketchVersion") + "\"" +
-//                  "}";
-//  mqttCli.publish(replacePlaceHolders(settings.getString("mqtt.topic.cmd")) + "/resp", retVal, false, qos);
-//}
+
+
+
+
 
 ESPManager::~ESPManager() {
   //  delete cbBind;
-  //  delete &mqttCli;
+  delete &mqttCli;
 }

@@ -9,6 +9,11 @@
 //#include <functional>
 //#include <map>
 #include "SettingsManager.h"
+#include <pgmspace.h>
+
+static const char STATUS_FORMAT_P[] PROGMEM = "{\"name\":\"%s\", \"status\":\"%s\"}";
+static const char STATUS_ONLINE_P[] PROGMEM = "online";
+static const char STATUS_OFFLINE_P[] PROGMEM = "offline";
 
 //template<class... params> class Binding;
 class ESPManager {
@@ -36,6 +41,9 @@ class ESPManager {
     MQTTClient mqttCli;
     WiFiMode wifiMode;
     bool sendOfflineStatus; //Sends a retain message for registering stauts
+
+    //conectivity functions
+    void createConnections();
     void connectToWifi();
     void waitForWiFi();
     void debugWiFiStatus();
@@ -46,15 +54,21 @@ class ESPManager {
     void disconnectWifi();
 
     //    Binding<String &, String &> *cbBind = nullptr;
-    //    typedef void (ESPManager::*cmdFn)(String);
     //    struct outputTimerHandler {
     //      outputHandlerType handler;
     //      long timing;
     //      long lastTime;
     //    };
 
-    //    SettingsManager settings;
-    //    std::map <String, cmdFn> commands;
+    // command functions
+    typedef void (ESPManager::*cmdFn)(const char *);
+    std::map <const char *, cmdFn> commands;
+    void cmdReconnect(const char * payload);
+    void cmdConfig(const char * payload);
+    void cmdRestart(const char * payload);
+    void cmdReset(const char * payload);
+    void cmdGetInfo(const char * payload);
+
     //    std::map <String, eventHandler> inputEvents;
     //    std::map <String, outputTimerHandler> outputEvents;
     //
@@ -67,11 +81,7 @@ class ESPManager {
     //
     //    void saveSettings(String payload);
     //    void updateEsp(String payload);
-    //    void cmdReconnect(String payload);
-    //    void cmdConfig(String payload);
-    //    void cmdRestart(String payload);
-    //    void cmdReset(String payload);
-    //    void getInfo(String payload);
+
 };
 //template<class... paramTypes>
 //class Binding {
