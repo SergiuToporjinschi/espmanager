@@ -11,12 +11,6 @@ ADC_MODE(ADC_VCC);
 ESPManager::ESPManager() {
   mqttCli = *new MQTTClient(800);
   wifiMode = WIFI_STA;
-
-  //  commands["reconnect"] = &ESPManager::cmdReconnect;
-  //  commands["restart"] = &ESPManager::cmdRestart;
-  //  commands["reset"] = &ESPManager::cmdReset;
-  //  commands["getInfo"] = &ESPManager::cmdGetInfo;
-  //  commands["config"] = &ESPManager::cmdConfig;
   cbBind = new Binding<String &, String &>(*this, &ESPManager::messageReceived);
   //  DBGLN("Last restart reson: " + ESP.getResetReason());
 }
@@ -171,8 +165,9 @@ void ESPManager::connectToMQTT() {
 void ESPManager::disconnectWifi() {
   DBGLN("disconnectWifi");
   WiFi.disconnect();
-//  WiFi.mode(WIFI_OFF);
-//  WiFi.forceSleepBegin();
+  WiFi.mode(WIFI_OFF);
+  WiFi.forceSleepBegin();
+  delay(100);
 };
 
 // ---==[ START Commands ]==---
@@ -183,8 +178,7 @@ void ESPManager::disconnectWifi() {
 void ESPManager::cmdReconnect(const char * payload) {
   DBGLN("cmdReconnect");
   mqttCli.disconnect();
-  //disconnectWifi();
-  delay(100);
+  disconnectWifi();
   createConnections();
 }
 
@@ -226,34 +220,34 @@ void ESPManager::cmdReset(const char * payload) {
 */
 void ESPManager::cmdGetInfo(const char * payload) {//TODO move to char *
   DBGLN("cmdGetInfo");
-  //  String coreVersion = ESP.getCoreVersion();
-  //  coreVersion.replace("_", ".");
-  //  String retVal = "{ \"chipId\": " + String(ESP.getChipId()) +
-  //                  ", \"localIP\" : \"" + WiFi.localIP().toString() + "\"" +
-  //                  ", \"macAddress\" : \"" + String(WiFi.macAddress()) + "\"" +
-  //                  ", \"lastRestartReson\" : \"" + ESP.getResetReason() + "\"" +
-  //                  ", \"flashChipId\" : " + String(ESP.getFlashChipId()) +
-  //                  ", \"coreVersion\" : \"" + coreVersion + "\"" +
-  //                  ", \"sdkVersion\" : \"" + ESP.getSdkVersion() + "\"" +
-  //                  ", \"vcc\" : " + String(ESP.getVcc() / 1024.00f) +
-  //                  ", \"flashChipSpeed\" : " + String(ESP.getFlashChipSpeed()) +
-  //                  ", \"cycleCount\" : " + String(ESP.getCycleCount()) +
-  //                  ", \"cpuFreq\" : " + String(ESP.getCpuFreqMHz() * 1000000) +
-  //                  ", \"freeHeap\": " + String(ESP.getFreeHeap()) +
-  //                  ", \"flashChipSize\" : " + String(ESP.getFlashChipSize()) +
-  //                  ", \"sketchSize\" : " + String(ESP.getSketchSize()) + "" +
-  //                  ", \"freeSketchSpace\" : " + String(ESP.getFreeSketchSpace()) + "" +
-  //                  ", \"flashChipRealSize\" : " + String(ESP.getFlashChipRealSize()) + "" +
-  //                  ", \"espManagerVersion\" : \"" + getVersion() + "\"" +
-  //                  //                  ", \"sketchVersion\" : \"" + settings.getString("sketchVersion") + "\"" +
-  //                  "}";
-  //  const char * cmdTopic = _mqttConf.getMember(F("topics")).getMember(F("cmd")).as<const char*>();
-  //  int qos = _mqttConf.getMember(F("qos")).as<int>();
-  //  char topic[100] = {0};
-  //
-  //  strcat(topic, cmdTopic);
-  //  strcat(topic, "/resp");
-  //  mqttCli.publish(topic, retVal, false, qos);
+  String coreVersion = ESP.getCoreVersion();
+  coreVersion.replace("_", ".");
+  String retVal = "{ \"chipId\": " + String(ESP.getChipId()) +
+                  ", \"localIP\" : \"" + WiFi.localIP().toString() + "\"" +
+                  ", \"macAddress\" : \"" + String(WiFi.macAddress()) + "\"" +
+                  ", \"lastRestartReson\" : \"" + ESP.getResetReason() + "\"" +
+                  ", \"flashChipId\" : " + String(ESP.getFlashChipId()) +
+                  ", \"coreVersion\" : \"" + coreVersion + "\"" +
+                  ", \"sdkVersion\" : \"" + ESP.getSdkVersion() + "\"" +
+                  ", \"vcc\" : " + String(ESP.getVcc() / 1024.00f) +
+                  ", \"flashChipSpeed\" : " + String(ESP.getFlashChipSpeed()) +
+                  ", \"cycleCount\" : " + String(ESP.getCycleCount()) +
+                  ", \"cpuFreq\" : " + String(ESP.getCpuFreqMHz() * 1000000) +
+                  ", \"freeHeap\": " + String(ESP.getFreeHeap()) +
+                  ", \"flashChipSize\" : " + String(ESP.getFlashChipSize()) +
+                  ", \"sketchSize\" : " + String(ESP.getSketchSize()) + "" +
+                  ", \"freeSketchSpace\" : " + String(ESP.getFreeSketchSpace()) + "" +
+                  ", \"flashChipRealSize\" : " + String(ESP.getFlashChipRealSize()) + "" +
+                  ", \"espManagerVersion\" : \"" + getVersion() + "\"" +
+                  //                  ", \"sketchVersion\" : \"" + settings.getString("sketchVersion") + "\"" +
+                  "}";
+  const char * cmdTopic = _mqttConf.getMember(F("topics")).getMember(F("cmd")).as<const char*>();
+  int qos = _mqttConf.getMember(F("qos")).as<int>();
+  char topic[100] = {0};
+
+  strcat(topic, cmdTopic);
+  strcat(topic, "/resp");
+  mqttCli.publish(topic, retVal, false, qos);
 }
 
 // ---==[ END Commands ]==---
@@ -339,19 +333,8 @@ void ESPManager::messageReceived(String &topic, String &payload) {
   if (executeRegisteredTopics(topic.c_str(), payload.c_str())) return;
 
   DBG("No method found");
-
-
-  //  String cmdTopic = replacePlaceHolders(settings.getString("mqtt.topic.cmd"));
-  //  String settingsTopic = replacePlaceHolders(settings.getString("mqtt.topic.settings"));
-  //  String updateTopic = replacePlaceHolders(settings.getString("mqtt.topic.update"));
-  //  if (topic == cmdTopic) {
-  //
-  //  } else if (topic == settingsTopic) {
-  //    saveSettings(payload);
-  //  } else if (topic == updateTopic) {
-  //    updateEsp(payload);
-  //  } else
 }
+
 int ESPManager::findCmd(const char * cmd) {
   for (int i = 0; (i < sizeof(cmdFunctions) / sizeof(cmdFunctions[0])) && strlen(cmdFunctions[i].cmd) > 0; i++) {
     if (strcmp(cmdFunctions[i].cmd, cmd) == 0) {
@@ -360,6 +343,7 @@ int ESPManager::findCmd(const char * cmd) {
   }
   return -1;
 }
+
 bool ESPManager::executeInteralTopics(const char * topic, const char * payload) {
   DBG("executeInteralTopics: "); DBG(topic); DBG(" - "); DBGLN(payload);
 
@@ -374,8 +358,10 @@ bool ESPManager::executeInteralTopics(const char * topic, const char * payload) 
     if (strcmp(topic, cmdTopic) == 0) {
       DBGLN("cmd");
       int poz = findCmd(payload);
-      if (poz >= 0) {
+      if (poz >= 0 && cmdFunctions[poz].func != nullptr) {
         (this->*cmdFunctions[poz].func)(payload);
+      } else if (poz >= 0 && cmdFunctions[poz].customFunc != nullptr) {
+        cmdFunctions[poz].customFunc(payload);
       }
       return true;
     } else if (strcmp(topic, settingsTopic) == 0) {

@@ -63,14 +63,16 @@ class ESPManager {
 
     // command functions
     typedef void (ESPManager::*cmdFn)(const char *);
+    typedef void (*cmdCustom)(const char*);
     struct FunctionMap {
       char cmd[20];
       cmdFn func;
+      cmdCustom customFunc;
     };
 
-    FunctionMap cmdFunctions[4] = {
+    FunctionMap cmdFunctions[3] = {
       {"reconnect", &ESPManager::cmdReconnect},
-      {"restart", &ESPManager::cmdRestart},
+      //{"restart", &ESPManager::cmdRestart}, --> currently disabled, it crashes the esp see https://github.com/SergiuToporjinschi/espmanager/issues/3
       {"reset", &ESPManager::cmdReset},
       {"getInfo", &ESPManager::cmdGetInfo}
     };
