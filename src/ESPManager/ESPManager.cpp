@@ -17,8 +17,7 @@ ESPManager::ESPManager() {
   commands["reset"] = &ESPManager::cmdReset;
   commands["getInfo"] = &ESPManager::cmdGetInfo;
   //  commands["config"] = &ESPManager::cmdConfig;
-
-  //  cbBind = new Binding<String &, String &>(*this, &ESPManager::messageReceived);
+  cbBind = new Binding<String &, String &>(*this, &ESPManager::messageReceived);
   //  DBGLN("Last restart reson: " + ESP.getResetReason());
 }
 
@@ -33,18 +32,24 @@ ESPManager::ESPManager() {
 void ESPManager::createConnections(JsonObject wlanConf, JsonObject mqttConf) {
   _wlanConf = wlanConf;
   _mqttConf = mqttConf;
+  createConnections();
 }
 
 void ESPManager::createConnections() {
   sendOfflineStatus = _mqttConf.getMember(F("sendOfflineStatus")).as<bool>();
   retainMsg = _mqttConf.getMember(("retainMessage")).as<bool>();
+
+  if (!_mqttConf.getMember(F("qos")).isNull() && _mqttConf.getMember(F("qos")).is<int>()) {
+    qos = _mqttConf.getMember(F("qos")).as<int>();
+  }
+
   connectToWifi();
   setupMQTT();
   connectToMQTT();
   if (sendOfflineStatus) {
     setOnlineStatusMessage();
   }
-  //  subscribeTopics();
+  subscribeTopics();
 }
 
 /**
@@ -101,7 +106,7 @@ void ESPManager::setupMQTT() {
   DBG("Setting MQTT: "); DBG(mqttServer); DBG("; port: "); DBGLN(mqttPort);
   mqttCli.begin(mqttServer, mqttPort, net);
 
-  //  mqttCli.onMessage(cbBind->callback); //TODO de implementat
+  mqttCli.onMessage(cbBind->callback); //TODO de implementat
 
   DBG("SendOfflineStatus: "); DBGLN(sendOfflineStatus);
   if (sendOfflineStatus) {
@@ -151,7 +156,7 @@ void ESPManager::connectToMQTT() {
   const char * user = _mqttConf.getMember(F("user")).as<const char*>();
   const char * password = _mqttConf.getMember(F("password")).as<const char*>();
 
-  DBGLN("Client: "); DBG(clientId); DBG("; User: ");  DBG(user); DBG("; Password: "); DBGLN(password);
+  DBG("Client: "); DBG(clientId); DBG("; User: ");  DBG(user); DBG("; Password: "); DBGLN(password);
   while (!mqttCli.connect(clientId, user, password)) {
     DBG("_");
     delay(1000);
@@ -164,6 +169,7 @@ void ESPManager::connectToMQTT() {
    Disconnects wifi and is putting it on sleep;
 */
 void ESPManager::disconnectWifi() {
+  DBGLN("disconnectWifi");
   WiFi.disconnect();
   WiFi.mode(WIFI_OFF);
   WiFi.forceSleepBegin();
@@ -175,6 +181,7 @@ void ESPManager::disconnectWifi() {
    Is disconnecting MQTT client, is disconnecting from WiFi, recreats all connections again;
 */
 void ESPManager::cmdReconnect(const char * payload) {
+  DBGLN("cmdReconnect");
   mqttCli.disconnect();
   disconnectWifi();
   delay(100);
@@ -196,6 +203,7 @@ void ESPManager::cmdReconnect(const char * payload) {
    Is disconnecting MQTT client, is disconnecting from WiFi, restarts the entire ESP;
 */
 void ESPManager::cmdRestart(const char * payload) {
+  DBGLN("cmdRestart");
   mqttCli.disconnect();
   disconnectWifi();
   ESP.restart();
@@ -206,6 +214,7 @@ void ESPManager::cmdRestart(const char * payload) {
    Is disconnecting MQTT client, is disconnecting from WiFi, resets the entire ESP;
 */
 void ESPManager::cmdReset(const char * payload) {
+  DBGLN("cmdReset");
   mqttCli.disconnect();
   disconnectWifi();
   ESP.reset();
@@ -216,6 +225,7 @@ void ESPManager::cmdReset(const char * payload) {
    Serializing the settings and submit them in mqtt;
 */
 void ESPManager::cmdGetInfo(const char * payload) {//TODO move to char *
+  DBGLN("cmdGetInfo");
   String coreVersion = ESP.getCoreVersion();
   coreVersion.replace("_", ".");
   String retVal = "{ \"chipId\": " + String(ESP.getChipId()) +
@@ -237,7 +247,7 @@ void ESPManager::cmdGetInfo(const char * payload) {//TODO move to char *
                   ", \"espManagerVersion\" : \"" + getVersion() + "\"" +
                   //                  ", \"sketchVersion\" : \"" + settings.getString("sketchVersion") + "\"" +
                   "}";
-  const char * cmdTopic = _mqttConf.getMember(F("topic")).getMember(F("cmd")).as<const char*>();
+  const char * cmdTopic = _mqttConf.getMember(F("topics")).getMember(F("cmd")).as<const char*>();
   int qos = _mqttConf.getMember(F("qos")).as<int>();
   char topic[100] = {0};
 
@@ -248,87 +258,133 @@ void ESPManager::cmdGetInfo(const char * payload) {//TODO move to char *
 
 // ---==[ END Commands ]==---
 
+/**
+   Subscribes to topics specified in settings.mqtt.topic;
+*/
+void ESPManager::subscribeTopics() {
+  DBGLN("subscribeTopics");
+  //topics is not configured, do not subscribe any topics
+  if (_mqttConf.getMember(F("topics")).isNull() || !_mqttConf.getMember(F("topics")).is<JsonObject>()) {
+    return;
+  }
+  DBGLN("subscribeTopics: foundSettings");
+  JsonObject topics = _mqttConf.getMember(F("topics")).as<JsonObject>();
 
-///**
-//   ---==[ This needs to be call in setup function ]==---
-//   Loops the entire process;
-//   It reconnects to MQTT if disconnects;
-//*/
-//void ESPManager::loopIt() {
-//  mqttCli.loop();
-//  delay(settings.getInt("esp.delayTime"));  // <- fixes some issues with WiFi stability
-//
-//  if (WiFi.status() != WL_CONNECTED || !mqttCli.connected()) {
-//    DBGLN("Not connected to MQTT reconnect ...");
-//    cmdReconnect("");
-//  }
-//
-//  for (std::map<String, outputTimerHandler>::iterator it = outputEvents.begin(); it != outputEvents.end(); ++it) {
-//    String key = it->first;
-//    if (millis() - outputEvents[key].lastTime > outputEvents[key].timing) {
-//      String output = outputEvents[key].handler(key, settings);
-//      DBGLN("publishing to topic: " + key + "- time:" + outputEvents[key].timing + "; output: " + output );
-//      output.trim();
-//      outputEvents[key].lastTime = millis();
-//      if (output.length() > 0) {
-//        mqttCli.publish(key, output, false,  qos);
-//      }
-//    }
-//  }
-//}
+  const char * cmdTopic = topics.getMember(F("cmd")).as<const char*>();
+  const char * settingsTopic = topics.getMember(F("settings")).as<const char*>();
+  const char * updateTopic = topics.getMember(F("update")).as<const char*>();
+
+  if (strlen(cmdTopic) > 0) {
+    DBGLN("subscribeTopics: cmd");
+    mqttCli.subscribe(cmdTopic, qos);
+  }
+
+  if (strlen(settingsTopic) > 0) {
+    DBGLN("subscribeTopics: settings");
+    mqttCli.subscribe(settingsTopic, qos);
+  }
+
+  if (strlen(updateTopic) > 0) {
+    DBGLN("subscribeTopics: update");
+    mqttCli.subscribe(updateTopic, qos);
+  }
+
+  //  for (std::map<String, eventHandler>::iterator it = inputEvents.begin(); it != inputEvents.end(); ++it) {
+  //    String key = it->first;
+  //    DBGLN("Subscribing to topic: " + key);
+  //    mqttCli.subscribe(key, qos);
+  //  }
+}
+
+/**
+   ---==[ This needs to be call in setup function ]==---
+   Loops the entire process;
+   It reconnects to MQTT if disconnects;
+*/
+void ESPManager::loopIt() {
+  mqttCli.loop();
+  //delay(settings.getInt("esp.delayTime"));  // <- fixes some issues with WiFi stability
+
+  if (WiFi.status() != WL_CONNECTED || !mqttCli.connected()) {
+    DBGLN("Not connected to MQTT reconnect ...");
+    cmdReconnect("");
+  }
+
+  //  for (std::map<String, outputTimerHandler>::iterator it = outputEvents.begin(); it != outputEvents.end(); ++it) {
+  //    String key = it->first;
+  //    if (millis() - outputEvents[key].lastTime > outputEvents[key].timing) {
+  //      String output = outputEvents[key].handler(key, settings);
+  //      DBGLN("publishing to topic: " + key + "- time:" + outputEvents[key].timing + "; output: " + output );
+  //      output.trim();
+  //      outputEvents[key].lastTime = millis();
+  //      if (output.length() > 0) {
+  //        mqttCli.publish(key, output, false,  qos);
+  //      }
+  //    }
+  //  }
+}
+
+/**
+   Called for every received message will call the specific function based on the topic
+   Will call a specific command, if is coming on command chanel
+   Will call saveSettings method if is coming on settings chanel
+   param @topic = chanel that has the message;
+   param @payload = payload, message
+*/
+void ESPManager::messageReceived(String &topic, String &payload) {
+  DBG("Incoming: "); DBG(topic); DBG(" - "); DBGLN(payload);
+
+  if (executeInteralTopics(topic.c_str(), payload.c_str())) return;
+  if (executeRegisteredTopics(topic.c_str(), payload.c_str())) return;
+
+  DBG("No method found");
+
+
+  //  String cmdTopic = replacePlaceHolders(settings.getString("mqtt.topic.cmd"));
+  //  String settingsTopic = replacePlaceHolders(settings.getString("mqtt.topic.settings"));
+  //  String updateTopic = replacePlaceHolders(settings.getString("mqtt.topic.update"));
+  //  if (topic == cmdTopic) {
+  //
+  //  } else if (topic == settingsTopic) {
+  //    saveSettings(payload);
+  //  } else if (topic == updateTopic) {
+  //    updateEsp(payload);
+  //  } else
+}
+
+bool ESPManager::executeInteralTopics(const char * topic, const char * payload) {
+  DBG("executeInteralTopics: "); DBG(topic); DBG(" - "); DBGLN(payload);
+  JsonVariant jsonTopics = _mqttConf.getMember(F("topics"));
+  if (!jsonTopics.isNull() && jsonTopics.is<JsonObject>()) {
+    JsonObject topics = jsonTopics.as<JsonObject>();
+    const char * cmdTopic = topics.getMember(F("cmd")).as<const char*>();
+    const char * settingsTopic = topics.getMember(F("settings")).as<const char*>();
+    const char * updateTopic = topics.getMember(F("update")).as<const char*>();
+    if (strcmp(topic, cmdTopic) == 0) {
+      (this->*commands[payload])(payload);
+      return true;
+    } else if (strcmp(topic, settingsTopic) == 0) {
+      //      saveSettings(payload);
+      return true;
+    } else if (topic == updateTopic) {
+      //      updateEsp(payload);
+      return true;
+    }
+    return false;
+  }
+}
+
+bool ESPManager::executeRegisteredTopics(const char * topic, const char * payload) {
+  DBG("executeRegisteredTopics: "); DBG(topic); DBG(" - "); DBGLN(payload);
+  return false;
+  //  if (inputEvents.find(topic) != inputEvents.end()) {
+  //    eventHandler topicListener = inputEvents[topic];
+  //    topicListener(payload, settings);
+  //  }
+}
 
 
 
-
-
-///**
-//   Subscribes to topics specified in settings.mqtt.topic;
-//*/
-//void ESPManager::subscribeTopics() {
-//  String cmdTopic = replacePlaceHolders(settings.getString("mqtt.topic.cmd"));
-//  String settingsTopic = replacePlaceHolders(settings.getString("mqtt.topic.settings"));
-//  String updateTopic = replacePlaceHolders(settings.getString("mqtt.topic.update"));
-//
-//  if (cmdTopic.length() > 0) {
-//    mqttCli.subscribe(cmdTopic, qos);
-//  };
-//  if (settingsTopic.length() > 0) {
-//    mqttCli.subscribe(settingsTopic, qos);
-//  };
-//  if (updateTopic.length() > 0) {
-//    mqttCli.subscribe(updateTopic, qos);
-//  };
-//  for (std::map<String, eventHandler>::iterator it = inputEvents.begin(); it != inputEvents.end(); ++it) {
-//    String key = it->first;
-//    DBGLN("Subscribing to topic: " + key);
-//    mqttCli.subscribe(key, qos);
-//  }
-//}
-//
-///**
-//   Called for every received message will call the specific function based on the topic
-//   Will call a specific command, if is coming on command chanel
-//   Will call saveSettings method if is coming on settings chanel
-//   param @topic = chanel that has the message;
-//   param @payload = payload, message
-//*/
-//void ESPManager::messageReceived(String &topic, String &payload) {
-//  DBGLN("Incoming: " + topic + " - " + payload);
-//  Serial.flush();
-//  String cmdTopic = replacePlaceHolders(settings.getString("mqtt.topic.cmd"));
-//  String settingsTopic = replacePlaceHolders(settings.getString("mqtt.topic.settings"));
-//  String updateTopic = replacePlaceHolders(settings.getString("mqtt.topic.update"));
-//  if (topic == cmdTopic) {
-//    (this->*commands[payload])(payload);
-//  } else if (topic == settingsTopic) {
-//    saveSettings(payload);
-//  } else if (topic == updateTopic) {
-//    updateEsp(payload);
-//  } else if (inputEvents.find(topic) != inputEvents.end()) {
-//    eventHandler topicListener = inputEvents[topic];
-//    topicListener(payload, settings);
-//  }
-//}
 //
 //String ESPManager::replacePlaceHolders(String stringToReplace) {
 //  String hostName = settings.getString("wlan.hostName");

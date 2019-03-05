@@ -12,7 +12,7 @@
     "password":"inter781metro",
     "sendOfflineStatus":true,
 	"retainMessage": true,
-    "qos":2,
+    "qos": 0,
     "topics":{
       "update":"IOT/espTest/update",
       "settings":"IOT/espTest/settings",

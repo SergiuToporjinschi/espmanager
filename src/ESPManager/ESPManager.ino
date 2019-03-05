@@ -34,15 +34,15 @@ void setup() {
   conf.readSettings("/settings.json");
   JsonObject wlanConf = conf.getJsonObject("wlan");
   JsonObject mqttConf = conf.getJsonObject("mqtt");
+  DBGLN("Start");
   man.createConnections(wlanConf, mqttConf);
-  //  man = *new ESPManager(wlanConf, mqttConf);
+//  man.addInputEventHandler(String("testEvent"), onCall);
   //  man.addOutputEventHandler(man->getStrSetting("mqtt.topic.submitData"), man->getLongSetting("mqtt.topic.submitDataInterval"), readTemp);
   //  man.addInputEventHandler(String("testEvent"), onCall);
-  //  man.createConnections();
 }
 
 void loop() {
-  //  man->loopIt();
+  man.loopIt();
 }
 
 String readTemp(String const & topic, SettingsManager & settings) {
