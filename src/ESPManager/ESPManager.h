@@ -31,13 +31,11 @@ class ESPManager {
 
     //    void addInputEventHandler(String topic, eventHandler handler);
     //    void addOutputEventHandler(String topic, long loopTime, outputHandlerType handler);
-    //    String getStrSetting(String property);
-    //    int getIntSetting(String property);
-    //    long getLongSetting(String property);
   private:
     const char * version = "2.0.0";
     bool retainMsg = false;
     int qos = 0;
+
     WiFiClient net;
     JsonObject _wlanConf;
     JsonObject _mqttConf;
@@ -65,18 +63,34 @@ class ESPManager {
 
     // command functions
     typedef void (ESPManager::*cmdFn)(const char *);
-    std::map <const char *, cmdFn> commands;
+    struct FunctionMap {
+      char cmd[20];
+      cmdFn func;
+    };
+
+    FunctionMap cmdFunctions[4] = {
+      {"reconnect", &ESPManager::cmdReconnect},
+      {"restart", &ESPManager::cmdRestart},
+      {"reset", &ESPManager::cmdReset},
+      {"getInfo", &ESPManager::cmdGetInfo}
+    };
+    
+    /**
+       Finds a command given as parameter and returns position in cmdFunctions
+    */
+    int findCmd(const char * cmd);
+    //    std::map <const char *, cmdFn> commands;
     void cmdReconnect(const char * payload);
     void cmdConfig(const char * payload);
     void cmdRestart(const char * payload);
     void cmdReset(const char * payload);
     void cmdGetInfo(const char * payload);
     void subscribeTopics();
-    
+
     void messageReceived(String &topic, String &payload);
     bool executeInteralTopics(const char * topic, const char * payload);
     bool executeRegisteredTopics(const char * topic, const char * payload);
-    
+
     //    std::map <String, eventHandler> inputEvents;
     //    std::map <String, outputTimerHandler> outputEvents;
     //
