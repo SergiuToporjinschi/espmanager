@@ -304,19 +304,21 @@ void ESPManager::loopIt() {
     DBGLN("Not connected to MQTT reconnect ...");
     cmdReconnect("");
   }
+  executeTimingOutputEvents();
+}
 
-  //  for (std::map<String, outputTimerHandler>::iterator it = outputEvents.begin(); it != outputEvents.end(); ++it) {
-  //    String key = it->first;
-  //    if (millis() - outputEvents[key].lastTime > outputEvents[key].timing) {
-  //      String output = outputEvents[key].handler(key, settings);
-  //      DBGLN("publishing to topic: " + key + "- time:" + outputEvents[key].timing + "; output: " + output );
-  //      output.trim();
-  //      outputEvents[key].lastTime = millis();
-  //      if (output.length() > 0) {
-  //        mqttCli.publish(key, output, false,  qos);
-  //      }
-  //    }
-  //  }
+void ESPManager::executeTimingOutputEvents() {
+  for (std::map<const char *, outputTimerItem>::iterator it = outputEvents.begin(); it != outputEvents.end(); ++it) {
+    const char * key = it->first;
+    if (millis() - outputEvents[key].lastTime > outputEvents[key].timing) {
+      const char * output = outputEvents[key].handler(key);
+      DBG("publishing to topic: "); DBG(key); DBG("- time:"); DBG(outputEvents[key].timing); DBG("; output: "); DBGLN(output);
+      outputEvents[key].lastTime = millis();
+      if (strlen(output) > 0) {
+        mqttCli.publish(key, output, false,  qos);
+      }
+    }
+  }
 }
 
 /**
@@ -360,8 +362,8 @@ bool ESPManager::executeCMDInteralTopics(const char * topic, const char * payloa
       int poz = findCmd(payload);
       if (poz >= 0 && cmdFunctions[poz].func != nullptr) {
         (this->*cmdFunctions[poz].func)(payload);
-//      } else if (poz >= 0 && cmdFunctions[poz].customFunc != nullptr) {
-//        cmdFunctions[poz].customFunc(payload);
+        //      } else if (poz >= 0 && cmdFunctions[poz].customFunc != nullptr) {
+        //        cmdFunctions[poz].customFunc(payload);
       }
       return true;
     } else if (strcmp(topic, settingsTopic) == 0) {
@@ -390,6 +392,8 @@ void ESPManager::addIncomingEventHandler(const char * topic, eventIncomingHandle
     DBGLN("To subscribe, topic is mandatory");
   }
 #endif
+  if (topic == nullptr || strlen(topic) <= 0 ) return;
+  DBG("addIncomingEventHandler: "); DBGLN(topic);
   inputEvents[topic] = handler;
 };
 
@@ -398,19 +402,7 @@ void ESPManager::addTimerOutputEventHandler(const char * topic, long loopTime, o
 };
 
 
-//
-///**
-//    --------========[       Commands       ]========--------
-//*/
-///**
-//   Save settings command;
-//   Takes the payload and is saving it in settings file
-//*/
-//void ESPManager::saveSettings(String payload) {
-//  payload.trim();
-//  settings.writeSettings(settingsFileName, payload);
-//}
-//
+
 ///**
 //   Serializing the settings and submit them in mqtt;
 //*/

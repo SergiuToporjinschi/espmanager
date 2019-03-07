@@ -98,6 +98,7 @@ class ESPManager {
     };
     std::map <const char *, eventIncomingHandler, cmp_str> inputEvents;
     std::map <const char *, outputTimerItem, cmp_str> outputEvents;
+    void executeTimingOutputEvents();
     //
     //    int ltpm = 0; //Last time publish message
     //
