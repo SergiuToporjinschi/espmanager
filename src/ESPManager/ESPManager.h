@@ -89,7 +89,7 @@ class ESPManager {
     void cmdGetInfo(const char * payload);
     void subscribeTopics();
 
-    void messageReceived(String &topic, String &payload);
+    void messageReceived(String & topic, String & payload);
     bool executeInteralTopics(const char * topic, const char * payload);
     bool executeRegisteredTopics(const char * topic, const char * payload);
 

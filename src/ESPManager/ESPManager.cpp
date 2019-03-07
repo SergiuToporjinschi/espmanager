@@ -326,7 +326,7 @@ void ESPManager::loopIt() {
    param @topic = chanel that has the message;
    param @payload = payload, message
 */
-void ESPManager::messageReceived(String &topic, String &payload) {
+void ESPManager::messageReceived(String & topic, String & payload) {
   DBG("Incoming: "); DBG(topic); DBG(" - "); DBGLN(payload);
 
   if (executeInteralTopics(topic.c_str(), payload.c_str())) return;
