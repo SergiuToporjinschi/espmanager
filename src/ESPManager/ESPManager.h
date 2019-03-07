@@ -25,13 +25,15 @@ class ESPManager {
     ~ESPManager();
     void createConnections(JsonObject wlanConf, JsonObject mqttConf);
     void loopIt();
-    
+
     const char * getVersion() {
       return version;
     }
 
     void addIncomingEventHandler(const char * topic, eventIncomingHandler handler);
+    void addIncomingEventHandler(const String topic, eventIncomingHandler handler);
     void addTimerOutputEventHandler(const char * topic, long loopTime, outputTimerHandler handler);
+    void addTimerOutputEventHandler(const String topic, long loopTime, outputTimerHandler handler);
   private:
     const char * version = "2.0.0";
     bool retainMsg = false;
@@ -42,12 +44,12 @@ class ESPManager {
     JsonObject _mqttConf; //MQTT settings
     MQTTClient mqttCli;   //MQTT client engine
     WiFiMode wifiMode;    //WiFi Engine
-    
+
     bool sendOfflineStatus; //Sends a retain message for registering stauts
 
     //binding definition for connecting onMessage from mqtt to local method
     Binding<String &, String &> *cbBind = nullptr;
-    
+
     //Structure for keeping the handler and timing for executing
     struct outputTimerItem {
       outputTimerHandler handler;
@@ -63,19 +65,20 @@ class ESPManager {
     };
 
     //Command list key and execution method
-    FunctionMap cmdFunctions[3] = {
+    FunctionMap cmdFunctions[4] = {
       {"reconnect", &ESPManager::cmdReconnect},
       //{"restart", &ESPManager::cmdRestart}, --> currently disabled, it crashes the esp see https://github.com/SergiuToporjinschi/espmanager/issues/3
       {"reset", &ESPManager::cmdReset},
+      {"update", &ESPManager::cmdUpdate},
       {"getInfo", &ESPManager::cmdGetInfo}
     };
-    
+
     struct cmp_str {
       bool operator()(char const *a, char const *b) const {
         return strcmp(a, b) < 0;
       }
     };
-    
+
     std::map <const char *, eventIncomingHandler, cmp_str> inputEvents;
     std::map <const char *, outputTimerItem, cmp_str> outputEvents;
 
@@ -91,14 +94,15 @@ class ESPManager {
     void disconnectWifi();
 
     // command functions
+    void subscribeCMD();
     int findCmd(const char * cmd);
     void cmdReconnect(const char * payload);
     void cmdConfig(const char * payload);
     void cmdRestart(const char * payload);
     void cmdReset(const char * payload);
     void cmdGetInfo(const char * payload);
+    void cmdUpdate(const char * payload);
     
-    void subscribeTopics();
 
     void messageReceived(String & topic, String & payload);
     bool executeInteralTopics(const char * topic, const char * payload);
@@ -120,7 +124,6 @@ class Binding {
     }
 
     static void callback(paramTypes... params) {
-      DBGLN("call");
       this_->invoke(params...);
     }
 
