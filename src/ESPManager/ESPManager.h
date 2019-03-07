@@ -55,11 +55,11 @@ class ESPManager {
     void disconnectWifi();
 
     Binding<String &, String &> *cbBind = nullptr;
-    //    struct outputTimerHandler {
-    //      outputHandlerType handler;
-    //      long timing;
-    //      long lastTime;
-    //    };
+    struct outputTimerItem {
+      outputTimerHandler handler;
+      long timing;
+      long lastTime;
+    };
 
     // command functions
     typedef void (ESPManager::*cmdFn)(const char *);
@@ -97,7 +97,7 @@ class ESPManager {
       }
     };
     std::map <const char *, eventIncomingHandler, cmp_str> inputEvents;
-    std::map <const char *, outputTimerHandler, cmp_str> outputEvents;
+    std::map <const char *, outputTimerItem, cmp_str> outputEvents;
     //
     //    int ltpm = 0; //Last time publish message
     //

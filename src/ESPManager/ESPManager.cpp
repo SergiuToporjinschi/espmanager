@@ -394,7 +394,7 @@ void ESPManager::addIncomingEventHandler(const char * topic, eventIncomingHandle
 };
 
 void ESPManager::addTimerOutputEventHandler(const char * topic, long loopTime, outputTimerHandler handler) {
-  //outputEvents[replacePlaceHolders(topic)] = {handler, loopTime};
+  outputEvents[topic] = {handler, loopTime};
 };
 
 

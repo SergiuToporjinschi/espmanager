@@ -38,7 +38,6 @@ void setup() {
   man.createConnections(wlanConf, mqttConf);
   man.addIncomingEventHandler(&"testEvent"[0], onCall);
   man.addTimerOutputEventHandler(&"testEvent"[0], 2, readTemp);
-  //  man.addInputEventHandler(String("testEvent"), onCall);
 }
 
 void loop() {
