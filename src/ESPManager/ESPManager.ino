@@ -36,7 +36,7 @@ void setup() {
   JsonObject mqttConf = conf.getJsonObject("mqtt");
   DBGLN("Start");
   man.createConnections(wlanConf, mqttConf);
-//  man.addInputEventHandler(String("testEvent"), onCall);
+  man.addIncomingEventHandler(&"testEvent"[0], onCall);
   //  man.addOutputEventHandler(man->getStrSetting("mqtt.topic.submitData"), man->getLongSetting("mqtt.topic.submitDataInterval"), readTemp);
   //  man.addInputEventHandler(String("testEvent"), onCall);
 }
@@ -51,6 +51,6 @@ String readTemp(String const & topic, SettingsManager & settings) {
   return "{temp:25, humidity: 75}";
 };
 
-void onCall(String const & msg, SettingsManager & settings) {
+void onCall(const char * msg) {
   DBGLN(msg);
 };

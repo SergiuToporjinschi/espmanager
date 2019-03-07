@@ -19,7 +19,7 @@ static const char STATUS_OFFLINE_P[] PROGMEM = "offline";
 template<class... params> class Binding;
 class ESPManager {
   public:
-    //    using eventHandler = std::function<void(String const&, SettingsManager &settings)>;
+    using eventHandler = std::function<void(const char *)>;
     //    using outputHandlerType = std::function<String(String const&, SettingsManager &settings)>;
     ESPManager ();
     ~ESPManager();
@@ -29,7 +29,7 @@ class ESPManager {
       return version;
     }
 
-    //    void addInputEventHandler(String topic, eventHandler handler);
+    void addIncomingEventHandler(const char * topic, eventHandler handler);
     //    void addOutputEventHandler(String topic, long loopTime, outputHandlerType handler);
   private:
     const char * version = "2.0.0";
@@ -76,7 +76,7 @@ class ESPManager {
       {"reset", &ESPManager::cmdReset},
       {"getInfo", &ESPManager::cmdGetInfo}
     };
-    
+
     /**
        Finds a command given as parameter and returns position in cmdFunctions
     */
@@ -90,10 +90,15 @@ class ESPManager {
     void subscribeTopics();
 
     void messageReceived(String & topic, String & payload);
-    bool executeInteralTopics(const char * topic, const char * payload);
+    bool executeCMDInteralTopics(const char * topic, const char * payload);
     bool executeRegisteredTopics(const char * topic, const char * payload);
 
-    //    std::map <String, eventHandler> inputEvents;
+    struct cmp_str {
+      bool operator()(char const *a, char const *b) const {
+        return strcmp(a, b) < 0;
+      }
+    };
+    std::map <const char *, eventHandler, cmp_str> inputEvents;
     //    std::map <String, outputTimerHandler> outputEvents;
     //
     //    int ltpm = 0; //Last time publish message

@@ -329,7 +329,7 @@ void ESPManager::loopIt() {
 void ESPManager::messageReceived(String & topic, String & payload) {
   DBG("Incoming: "); DBG(topic); DBG(" - "); DBGLN(payload);
 
-  if (executeInteralTopics(topic.c_str(), payload.c_str())) return;
+  if (executeCMDInteralTopics(topic.c_str(), payload.c_str())) return;
   if (executeRegisteredTopics(topic.c_str(), payload.c_str())) return;
 
   DBG("No method found");
@@ -344,7 +344,7 @@ int ESPManager::findCmd(const char * cmd) {
   return -1;
 }
 
-bool ESPManager::executeInteralTopics(const char * topic, const char * payload) {
+bool ESPManager::executeCMDInteralTopics(const char * topic, const char * payload) {
   DBG("executeInteralTopics: "); DBG(topic); DBG(" - "); DBGLN(payload);
 
   JsonVariant jsonTopics = _mqttConf.getMember(F("topics"));
@@ -384,22 +384,14 @@ bool ESPManager::executeRegisteredTopics(const char * topic, const char * payloa
   //  }
 }
 
-
-
-//
-//String ESPManager::replacePlaceHolders(String stringToReplace) {
-//  String hostName = settings.getString("wlan.hostName");
-//  stringToReplace.replace("<hostName>", hostName);
-//  return stringToReplace;
-//};
-//void ESPManager::addInputEventHandler(String topic, eventHandler handler) {
-//#ifndef DEBUG_SERIAL
-//  if (topic.length() <= 0) {
-//    DBGLN("To subscribe, topic is mandatory");
-//  }
-//#endif
-//  inputEvents[replacePlaceHolders(topic)] = handler;
-//};
+void ESPManager::addIncomingEventHandler(const char * topic, eventHandler handler) {
+#ifndef DEBUG_SERIAL
+  if (topic != nullptr) {
+    DBGLN("To subscribe, topic is mandatory");
+  }
+#endif
+  inputEvents[topic] = handler;
+};
 //
 //void ESPManager::addOutputEventHandler(String topic, long loopTime, outputHandlerType handler) {
 //  outputEvents[replacePlaceHolders(topic)] = {handler, loopTime};
