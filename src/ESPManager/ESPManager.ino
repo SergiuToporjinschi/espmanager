@@ -45,8 +45,6 @@ void loop() {
 }
 
 const char * readTemp(const char * msg) {
-//  DBGLN(settings.getInt("dht.pin"));
-//  DBGLN(settings.getString("dht.type"));
   return "{temp:25, humidity: 75}";
 };
 

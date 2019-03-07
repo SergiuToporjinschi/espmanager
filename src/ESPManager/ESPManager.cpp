@@ -182,16 +182,6 @@ void ESPManager::cmdReconnect(const char * payload) {
   createConnections();
 }
 
-///** // maybe is better if get this outside of manager not having the entire configuration file
-//   CMD: config
-//   Is publising all the settings on cmd channel;
-//*/
-//void ESPManager::cmdConfig(const char * payload) {
-//  //delay(10);
-//  auto allSettings = settings.getSettings();
-//  mqttCli.publish(replacePlaceHolders(settings.getString("mqtt.topic.cmd")) + "/resp", SettingsManager::stringify(allSettings), false, qos);
-//}
-
 /**
    CMD: restart
    Is disconnecting MQTT client, is disconnecting from WiFi, restarts the entire ESP;
@@ -282,13 +272,17 @@ void ESPManager::subscribeTopics() {
     DBGLN("subscribeTopics: update");
     mqttCli.subscribe(updateTopic, qos);
   }
-
-  //  for (std::map<String, eventHandler>::iterator it = inputEvents.begin(); it != inputEvents.end(); ++it) {
-  //    String key = it->first;
-  //    DBGLN("Subscribing to topic: " + key);
-  //    mqttCli.subscribe(key, qos);
-  //  }
+  //subscribeInputTopics();
 }
+
+//void ESPManager::subscribeInputTopics() {
+//  DBGLN("subscribeInputTopics:");
+//  for (std::map<const char *, eventIncomingHandler>::iterator it = inputEvents.begin(); it != inputEvents.end(); ++it) {
+//    const char * key = it->first;
+//    DBG("Subscribing to topic: "); DBGLN(key);
+//    mqttCli.subscribe(key, qos);
+//  }
+//}
 
 /**
    ---==[ This needs to be call in setup function ]==---
@@ -329,12 +323,12 @@ void ESPManager::executeTimingOutputEvents() {
    param @payload = payload, message
 */
 void ESPManager::messageReceived(String & topic, String & payload) {
-  DBG("Incoming: "); DBG(topic); DBG(" - "); DBGLN(payload);
+  DBG("IncomingMessage: "); DBG(topic); DBG(" - "); DBGLN(payload);
 
-  if (executeCMDInteralTopics(topic.c_str(), payload.c_str())) return;
+  if (executeInteralTopics(topic.c_str(), payload.c_str())) return;
   if (executeRegisteredTopics(topic.c_str(), payload.c_str())) return;
 
-  DBG("No method found");
+  DBGLN("No method found");
 }
 
 int ESPManager::findCmd(const char * cmd) {
@@ -346,8 +340,8 @@ int ESPManager::findCmd(const char * cmd) {
   return -1;
 }
 
-bool ESPManager::executeCMDInteralTopics(const char * topic, const char * payload) {
-  DBG("executeInteralTopics: "); DBG(topic); DBG(" - "); DBGLN(payload);
+bool ESPManager::executeInteralTopics(const char * topic, const char * payload) {
+  DBG("executeCMDInteralTopics: "); DBG(topic); DBG(" - "); DBGLN(payload);
 
   JsonVariant jsonTopics = _mqttConf.getMember(F("topics"));
 
@@ -362,12 +356,7 @@ bool ESPManager::executeCMDInteralTopics(const char * topic, const char * payloa
       int poz = findCmd(payload);
       if (poz >= 0 && cmdFunctions[poz].func != nullptr) {
         (this->*cmdFunctions[poz].func)(payload);
-        //      } else if (poz >= 0 && cmdFunctions[poz].customFunc != nullptr) {
-        //        cmdFunctions[poz].customFunc(payload);
       }
-      return true;
-    } else if (strcmp(topic, settingsTopic) == 0) {
-      //      saveSettings(payload); //TODO to implement
       return true;
     } else if (topic == updateTopic) {
       //      updateEsp(payload); //TODO to implement
@@ -379,11 +368,9 @@ bool ESPManager::executeCMDInteralTopics(const char * topic, const char * payloa
 
 bool ESPManager::executeRegisteredTopics(const char * topic, const char * payload) {
   DBG("executeRegisteredTopics: "); DBG(topic); DBG(" - "); DBGLN(payload);
-  return false;
-  //  if (inputEvents.find(topic) != inputEvents.end()) {
-  //    eventHandler topicListener = inputEvents[topic];
-  //    topicListener(payload, settings);
-  //  }
+  if (inputEvents.find(topic) != inputEvents.end() && inputEvents[topic] != nullptr)
+    inputEvents[topic](payload);
+  return true;
 }
 
 void ESPManager::addIncomingEventHandler(const char * topic, eventIncomingHandler handler) {
@@ -395,6 +382,7 @@ void ESPManager::addIncomingEventHandler(const char * topic, eventIncomingHandle
   if (topic == nullptr || strlen(topic) <= 0 ) return;
   DBG("addIncomingEventHandler: "); DBGLN(topic);
   inputEvents[topic] = handler;
+  mqttCli.subscribe(topic, qos);
 };
 
 void ESPManager::addTimerOutputEventHandler(const char * topic, long loopTime, outputTimerHandler handler) {
