@@ -19,8 +19,8 @@ static const char STATUS_OFFLINE_P[] PROGMEM = "offline";
 template<class... params> class Binding;
 class ESPManager {
   public:
-    using eventHandler = std::function<void(const char *)>;
-    //    using outputHandlerType = std::function<String(String const&, SettingsManager &settings)>;
+    using eventIncomingHandler = std::function<void(const char *)>;
+    using outputTimerHandler = std::function<const char *(const char *)>;
     ESPManager ();
     ~ESPManager();
     void createConnections(JsonObject wlanConf, JsonObject mqttConf);
@@ -29,8 +29,8 @@ class ESPManager {
       return version;
     }
 
-    void addIncomingEventHandler(const char * topic, eventHandler handler);
-    //    void addOutputEventHandler(String topic, long loopTime, outputHandlerType handler);
+    void addIncomingEventHandler(const char * topic, eventIncomingHandler handler);
+    void addTimerOutputEventHandler(const char * topic, long loopTime, outputTimerHandler handler);
   private:
     const char * version = "2.0.0";
     bool retainMsg = false;
@@ -63,11 +63,9 @@ class ESPManager {
 
     // command functions
     typedef void (ESPManager::*cmdFn)(const char *);
-    typedef void (*cmdCustom)(const char*);
     struct FunctionMap {
       char cmd[20];
       cmdFn func;
-      cmdCustom customFunc;
     };
 
     FunctionMap cmdFunctions[3] = {
@@ -98,8 +96,8 @@ class ESPManager {
         return strcmp(a, b) < 0;
       }
     };
-    std::map <const char *, eventHandler, cmp_str> inputEvents;
-    //    std::map <String, outputTimerHandler> outputEvents;
+    std::map <const char *, eventIncomingHandler, cmp_str> inputEvents;
+    std::map <const char *, outputTimerHandler, cmp_str> outputEvents;
     //
     //    int ltpm = 0; //Last time publish message
     //

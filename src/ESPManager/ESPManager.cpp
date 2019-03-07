@@ -360,8 +360,8 @@ bool ESPManager::executeCMDInteralTopics(const char * topic, const char * payloa
       int poz = findCmd(payload);
       if (poz >= 0 && cmdFunctions[poz].func != nullptr) {
         (this->*cmdFunctions[poz].func)(payload);
-      } else if (poz >= 0 && cmdFunctions[poz].customFunc != nullptr) {
-        cmdFunctions[poz].customFunc(payload);
+//      } else if (poz >= 0 && cmdFunctions[poz].customFunc != nullptr) {
+//        cmdFunctions[poz].customFunc(payload);
       }
       return true;
     } else if (strcmp(topic, settingsTopic) == 0) {
@@ -384,7 +384,7 @@ bool ESPManager::executeRegisteredTopics(const char * topic, const char * payloa
   //  }
 }
 
-void ESPManager::addIncomingEventHandler(const char * topic, eventHandler handler) {
+void ESPManager::addIncomingEventHandler(const char * topic, eventIncomingHandler handler) {
 #ifndef DEBUG_SERIAL
   if (topic != nullptr) {
     DBGLN("To subscribe, topic is mandatory");
@@ -392,11 +392,11 @@ void ESPManager::addIncomingEventHandler(const char * topic, eventHandler handle
 #endif
   inputEvents[topic] = handler;
 };
-//
-//void ESPManager::addOutputEventHandler(String topic, long loopTime, outputHandlerType handler) {
-//  outputEvents[replacePlaceHolders(topic)] = {handler, loopTime};
-//};
-//
+
+void ESPManager::addTimerOutputEventHandler(const char * topic, long loopTime, outputTimerHandler handler) {
+  //outputEvents[replacePlaceHolders(topic)] = {handler, loopTime};
+};
+
 
 //
 ///**

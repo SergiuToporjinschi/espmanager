@@ -25,7 +25,7 @@
 #include "ESPManager.h"
 #include "SettingsManager.h"
 
-String readTemp(String const & topic, SettingsManager & settings);
+const char * readTemp(const char * msg);
 SettingsManager conf;
 ESPManager man;
 
@@ -37,7 +37,7 @@ void setup() {
   DBGLN("Start");
   man.createConnections(wlanConf, mqttConf);
   man.addIncomingEventHandler(&"testEvent"[0], onCall);
-  //  man.addOutputEventHandler(man->getStrSetting("mqtt.topic.submitData"), man->getLongSetting("mqtt.topic.submitDataInterval"), readTemp);
+  man.addTimerOutputEventHandler(&"testEvent"[0], 2, readTemp);
   //  man.addInputEventHandler(String("testEvent"), onCall);
 }
 
@@ -45,9 +45,9 @@ void loop() {
   man.loopIt();
 }
 
-String readTemp(String const & topic, SettingsManager & settings) {
-  DBGLN(settings.getInt("dht.pin"));
-  DBGLN(settings.getString("dht.type"));
+const char * readTemp(const char * msg) {
+//  DBGLN(settings.getInt("dht.pin"));
+//  DBGLN(settings.getString("dht.type"));
   return "{temp:25, humidity: 75}";
 };
 
