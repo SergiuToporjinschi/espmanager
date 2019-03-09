@@ -197,7 +197,7 @@ void ESPManager::loopIt() {
 
   if (WiFi.status() != WL_CONNECTED || !mqttCli.connected()) {
     DBGLN("Not connected to MQTT reconnect ...");
-    cmdReconnect("");
+    reconnect();
   }
   executeTimingOutputEvents();
 }
@@ -249,9 +249,18 @@ bool ESPManager::executeInteralTopics(const char * topic, const char * payload) 
 
     if (strcmp(topic, cmdTopic) == 0) {
       DBG("cmd: "); DBG(topic); DBG(" - "); DBGLN(payload);
-      int poz = findCmd(payload);
+
+      const size_t capacity = 2 * JSON_OBJECT_SIZE(2) + 50;
+      StaticJsonDocument<capacity> doc;
+      DeserializationError err = deserializeJson(doc, payload);
+      if (err) {
+        DBGLN("Invalid CMD JSON:");
+        return false;
+      }
+      int poz = findCmd(doc["cmd"]);
       if (poz >= 0 && cmdFunctions[poz].func != nullptr) {
-        (this->*cmdFunctions[poz].func)(payload);
+        JsonVariant params = doc["params"].as<JsonVariant>();
+        (this->*cmdFunctions[poz].func)(params);
       }
       return true;
     } else if (topic == updateTopic) {
@@ -293,23 +302,27 @@ void ESPManager::addTimerOutputEventHandler(const char * topic, long loopTime, o
   outputEvents[topic] = {handler, loopTime};
 };
 
+void ESPManager::reconnect() {
+  mqttCli.disconnect();
+  disconnectWifi();
+  createConnections();
+}
+
 // ---==[ START Commands ]==---
 /**
    CMD: reconnect
    Is disconnecting MQTT client, is disconnecting from WiFi, recreats all connections again;
 */
-void ESPManager::cmdReconnect(const char * payload) {
+void ESPManager::cmdReconnect(JsonVariant params) {
   DBGLN("cmdReconnect");
-  mqttCli.disconnect();
-  disconnectWifi();
-  createConnections();
+  reconnect();
 }
 
 /**
    CMD: restart
    Is disconnecting MQTT client, is disconnecting from WiFi, restarts the entire ESP;
 */
-void ESPManager::cmdRestart(const char * payload) {
+void ESPManager::cmdRestart(JsonVariant params) {
   DBGLN("cmdRestart");
   mqttCli.disconnect();
   disconnectWifi();
@@ -320,7 +333,7 @@ void ESPManager::cmdRestart(const char * payload) {
    CMD: restart
    Is disconnecting MQTT client, is disconnecting from WiFi, resets the entire ESP;
 */
-void ESPManager::cmdReset(const char * payload) {
+void ESPManager::cmdReset(JsonVariant params) {
   DBGLN("cmdReset");
   mqttCli.disconnect();
   disconnectWifi();
@@ -331,7 +344,7 @@ void ESPManager::cmdReset(const char * payload) {
    CMD: getInfo
    Serializing the settings and submit them in mqtt;
 */
-void ESPManager::cmdGetInfo(const char * payload) {//TODO move to char *
+void ESPManager::cmdGetInfo(JsonVariant params) {//TODO move to char *
   DBGLN("cmdGetInfo");
   String coreVersion = ESP.getCoreVersion();
   coreVersion.replace("_", ".");
@@ -363,50 +376,43 @@ void ESPManager::cmdGetInfo(const char * payload) {//TODO move to char *
   mqttCli.publish(topic, retVal, false, qos);
 }
 
-void ESPManager::cmdUpdate(const char * payload) {
+void ESPManager::cmdUpdate(JsonVariant params) {
   DBGLN("Update triggered");
-  if (payload != nullptr && strlen(payload)) return;
+  if (params.isNull()) return;
 
-  StaticJsonDocument<5> doc;
-  DeserializationError err = deserializeJson(doc, payload);
-  if (err) {
-    DBGLN("Invalid JSON:");
-    return;
-  }
-
-  const char * type = doc["type"] | "";
-  const char * ver = doc["ver"] | "";
+  const char * type = params["type"].as<const char *>();
+  const char * ver = params["version"].as<const char *>();
   DBG("type: "); DBGLN(type);
   DBG("ver: "); DBGLN(ver);
-  
-    //  String type = payload.substring(0, payload.indexOf(","));
-    //  String ver = payload.substring(payload.indexOf(",") + 1);
-    //  String updateLink = replacePlaceHolders(settings.getString("updateServer"));
-    //  t_httpUpdate_return ret;
-    //  if (type == "sketch") {
-    //    ret = ESPhttpUpdate.update(updateLink, ver);
-    //  } else if (type == "spiffs") {
-    //    ret = ESPhttpUpdate.updateSpiffs(updateLink, ver);
-    //  }
-    //  switch (ret) {
-    //    case HTTP_UPDATE_FAILED:
-    //      DBGLN("HTTP_UPDATE_FAILD Error: " + String(ESPhttpUpdate.getLastError()) + " - " + ESPhttpUpdate.getLastErrorString());
-    //      DBGLN();
-    //      break;
-    //
-    //    case HTTP_UPDATE_NO_UPDATES:
-    //      DBGLN("HTTP_UPDATE_NO_UPDATES");
-    //      break;
-    //
-    //    case HTTP_UPDATE_OK:
-    //      DBGLN("HTTP_UPDATE_OK");
-    //      if (type == "spiffs") {
-    //        mqttCli.disconnect();
-    //        disconnectWifi();
-    //        ESP.restart();
-    //      }
-    //      break;
-    //  }
+
+  //  String type = payload.substring(0, payload.indexOf(","));
+  //  String ver = payload.substring(payload.indexOf(",") + 1);
+  //  String updateLink = replacePlaceHolders(settings.getString("updateServer"));
+  //  t_httpUpdate_return ret;
+  //  if (type == "sketch") {
+  //    ret = ESPhttpUpdate.update(updateLink, ver);
+  //  } else if (type == "spiffs") {
+  //    ret = ESPhttpUpdate.updateSpiffs(updateLink, ver);
+  //  }
+  //  switch (ret) {
+  //    case HTTP_UPDATE_FAILED:
+  //      DBGLN("HTTP_UPDATE_FAILD Error: " + String(ESPhttpUpdate.getLastError()) + " - " + ESPhttpUpdate.getLastErrorString());
+  //      DBGLN();
+  //      break;
+  //
+  //    case HTTP_UPDATE_NO_UPDATES:
+  //      DBGLN("HTTP_UPDATE_NO_UPDATES");
+  //      break;
+  //
+  //    case HTTP_UPDATE_OK:
+  //      DBGLN("HTTP_UPDATE_OK");
+  //      if (type == "spiffs") {
+  //        mqttCli.disconnect();
+  //        disconnectWifi();
+  //        ESP.restart();
+  //      }
+  //      break;
+  //  }
 }
 // ---==[ END Commands ]==---
 

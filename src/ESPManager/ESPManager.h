@@ -58,7 +58,7 @@ class ESPManager {
     };
 
     //Structure for mapping commands to class functions
-    typedef void (ESPManager::*cmdFn)(const char *);
+    typedef void (ESPManager::*cmdFn)(JsonVariant params);
     struct FunctionMap {
       char cmd[20];
       cmdFn func;
@@ -96,14 +96,14 @@ class ESPManager {
     // command functions
     void subscribeCMD();
     int findCmd(const char * cmd);
-    void cmdReconnect(const char * payload);
-    void cmdConfig(const char * payload);
-    void cmdRestart(const char * payload);
-    void cmdReset(const char * payload);
-    void cmdGetInfo(const char * payload);
-    void cmdUpdate(const char * payload);
-    
+    void cmdReconnect(JsonVariant params);
+    void cmdConfig(JsonVariant params);
+    void cmdRestart(JsonVariant params);
+    void cmdReset(JsonVariant params);
+    void cmdGetInfo(JsonVariant params);
+    void cmdUpdate(JsonVariant params);
 
+    void reconnect();
     void messageReceived(String & topic, String & payload);
     bool executeInteralTopics(const char * topic, const char * payload);
     bool executeRegisteredTopics(const char * topic, const char * payload);
