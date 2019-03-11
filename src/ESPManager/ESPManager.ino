@@ -45,7 +45,7 @@ void loop() {
 }
 
 const char * readTemp(const char * msg) {
-  return "{temp:25, humidity: 75}";
+  return "{temp:39, humidity: 75}";
 };
 
 void onCall(const char * msg) {

@@ -250,7 +250,7 @@ bool ESPManager::executeInteralTopics(const char * topic, const char * payload) 
     if (strcmp(topic, cmdTopic) == 0) {
       DBG("cmd: "); DBG(topic); DBG(" - "); DBGLN(payload);
 
-      const size_t capacity = 2 * JSON_OBJECT_SIZE(2) + 50;
+      const size_t capacity = JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3) + 110;
       StaticJsonDocument<capacity> doc;
       DeserializationError err = deserializeJson(doc, payload);
       if (err) {
@@ -382,37 +382,38 @@ void ESPManager::cmdUpdate(JsonVariant params) {
 
   const char * type = params["type"].as<const char *>();
   const char * ver = params["version"].as<const char *>();
+  const char * url = params["url"].as<const char *>();
   DBG("type: "); DBGLN(type);
   DBG("ver: "); DBGLN(ver);
+  DBG("url: "); DBGLN(url);
 
-  //  String type = payload.substring(0, payload.indexOf(","));
-  //  String ver = payload.substring(payload.indexOf(",") + 1);
-  //  String updateLink = replacePlaceHolders(settings.getString("updateServer"));
-  //  t_httpUpdate_return ret;
-  //  if (type == "sketch") {
-  //    ret = ESPhttpUpdate.update(updateLink, ver);
-  //  } else if (type == "spiffs") {
-  //    ret = ESPhttpUpdate.updateSpiffs(updateLink, ver);
-  //  }
-  //  switch (ret) {
-  //    case HTTP_UPDATE_FAILED:
-  //      DBGLN("HTTP_UPDATE_FAILD Error: " + String(ESPhttpUpdate.getLastError()) + " - " + ESPhttpUpdate.getLastErrorString());
-  //      DBGLN();
-  //      break;
-  //
-  //    case HTTP_UPDATE_NO_UPDATES:
-  //      DBGLN("HTTP_UPDATE_NO_UPDATES");
-  //      break;
-  //
-  //    case HTTP_UPDATE_OK:
-  //      DBGLN("HTTP_UPDATE_OK");
-  //      if (type == "spiffs") {
-  //        mqttCli.disconnect();
-  //        disconnectWifi();
-  //        ESP.restart();
-  //      }
-  //      break;
-  //  }
+  t_httpUpdate_return ret;
+  if (strcmp_P(type, UPDATE_SKETCH_P) == 0) {
+    DBGLN("updateTYPE");
+    ret = ESPhttpUpdate.update(url, ver);
+  } else if (strcmp_P(type, UPDATE_SPIFFS_P) == 0) {
+    DBGLN("updateSPIFFS");
+    ret = ESPhttpUpdate.updateSpiffs(url, ver);
+  }
+  switch (ret) {
+    case HTTP_UPDATE_FAILED:
+      DBG("HTTP_UPDATE_FAILD Error: ") + DBG(ESPhttpUpdate.getLastError()); DBG(" - "); DBGLN(ESPhttpUpdate.getLastErrorString());
+      DBGLN();
+      break;
+
+    case HTTP_UPDATE_NO_UPDATES:
+      DBGLN("HTTP_UPDATE_NO_UPDATES");
+      break;
+
+    case HTTP_UPDATE_OK:
+      DBGLN("HTTP_UPDATE_OK");
+      if (type == "spiffs") {
+        mqttCli.disconnect();
+        disconnectWifi();
+        ESP.restart();
+      }
+      break;
+  }
 }
 // ---==[ END Commands ]==---
 

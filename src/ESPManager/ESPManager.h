@@ -6,7 +6,7 @@
 #include <ArduinoJson.h>
 #include <MQTTClient.h>
 #include <ESP8266WiFi.h>
-//#include <ESP8266httpUpdate.h>
+#include <ESP8266httpUpdate.h>
 #include <functional>
 #include <map>
 #include "SettingsManager.h"
@@ -15,6 +15,9 @@
 static const char STATUS_FORMAT_P[] PROGMEM = "{\"name\":\"%s\", \"status\":\"%s\"}";
 static const char STATUS_ONLINE_P[] PROGMEM = "online";
 static const char STATUS_OFFLINE_P[] PROGMEM = "offline";
+
+static const char UPDATE_SKETCH_P[] PROGMEM = "sketch";
+static const char UPDATE_SPIFFS_P[] PROGMEM = "spiffs";
 
 template<class... params> class Binding;
 class ESPManager {
