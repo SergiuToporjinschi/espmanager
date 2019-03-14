@@ -72,7 +72,6 @@ onCall<void(const char * msg)>
 	"retainMessage": true,
     "qos": 0,
     "topics":{                            //Internal topics
-      "update":"IOT/espTest/update",
       "settings":"IOT/espTest/settings",
       "cmd":"IOT/espTest/cmd",
       "status":"IOT/espTest/status"
@@ -118,4 +117,33 @@ const char * readTemp(const char * msg) {
 void onCall(const char * msg) {
   Serial.println(msg);
 };
+```
+
+## **Commands examples**
+
+#### **Getting information**
+```json
+{ "cmd":"getInfo" }
+```
+
+#### **Ask for a reset**
+```json
+{ "cmd":"reset" }
+```
+
+#### **Ask for a reconnect**
+```json
+{ "cmd":"reconnect" }
+```
+
+#### **Update over the air**
+```json
+{
+  "cmd":"update",
+  "params":{
+    "type":"sketch",                           //What to update <sketch|spiffs>
+    "version":"4.0",                           //What's the version that needs to be installed
+    "url":"http://myServer.com/api/url/update" //From where the code can be requested
+  }
+}
 ```

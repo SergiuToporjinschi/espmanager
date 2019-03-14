@@ -14,7 +14,6 @@
 	"retainMessage": true,
     "qos": 0,
     "topics":{
-      "update":"IOT/espTest/update",
       "settings":"IOT/espTest/settings",
       "cmd":"IOT/espTest/cmd",
       "status":"IOT/espTest/status"
