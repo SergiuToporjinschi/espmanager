@@ -9,7 +9,6 @@
 #include <ESP8266httpUpdate.h>
 #include <functional>
 #include <map>
-#include "SettingsManager.h"
 #include <pgmspace.h>
 
 static const char STATUS_FORMAT_P[] PROGMEM = "{\"name\":\"%s\", \"status\":\"%s\"}";
