@@ -6,6 +6,9 @@
 /**  INITIAL status
   //Sketch uses 407060 bytes (42%) of program storage space. Maximum is 958448 bytes.
   //Global variables use 30208 bytes (36%) of dynamic memory, leaving 51712 bytes for local variables. Maximum is 81920 bytes.
+804
+  Sketch uses 333224 bytes (34%) of program storage space. Maximum is 958448 bytes.
+  Global variables use 29404 bytes (35%) of dynamic memory, leaving 52516 bytes for local variables. Maximum is 81920 bytes.
 */
 
 #define DEBUGER //uncomment for Serial debugging statements
@@ -37,7 +40,8 @@ void setup() {
   DBGLN("Start");
   man.createConnections(wlanConf, mqttConf);
   man.addIncomingEventHandler("IOT/espTest/inc", onCall);
-  man.addTimerOutputEventHandler("IOT/espTest/out", 2000, readTemp);
+//  man.addTimerOutputEventHandler("IOT/espTest/out", 2000, readTemp);
+  man.sendMsg("IOT/espTest/out", "test");
 }
 
 void loop() {

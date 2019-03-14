@@ -1,6 +1,7 @@
 #define DBGLN(x) Serial.println(x)
 #define DBG(x) Serial.print(x)
-
+//#define DBGLN(x)
+//#define DBG(x)
 
 #include "ESPManager.h"
 ADC_MODE(ADC_VCC);
@@ -27,7 +28,7 @@ void ESPManager::createConnections(JsonObject wlanConf, JsonObject mqttConf) {
 
 void ESPManager::createConnections() {
   sendOfflineStatus = _mqttConf.getMember(F("sendOfflineStatus")).as<bool>();
-  retainMsg = _mqttConf.getMember(("retainMessage")).as<bool>();
+  retainMsg = _mqttConf.getMember(F("retainMessage")).as<bool>();
 
   if (!_mqttConf.getMember(F("qos")).isNull() && _mqttConf.getMember(F("qos")).is<int>()) {
     qos = _mqttConf.getMember(F("qos")).as<int>();
@@ -55,7 +56,7 @@ void ESPManager::connectToWifi() {
   WiFi.mode(wifiMode);
   WiFi.hostname(_wlanConf.getMember(F("hostName")).as<char*>());
   delay(100);
-  WiFi.begin(_wlanConf.getMember("ssid").as<char*>(), _wlanConf.getMember("password").as<char*>());
+  WiFi.begin(_wlanConf.getMember(F("ssid")).as<char*>(), _wlanConf.getMember(F("password")).as<char*>());
   waitForWiFi();
 }
 
@@ -90,7 +91,7 @@ void ESPManager::debugWiFiStatus() {
    Is setting-up the MQTT client baaed on settings.mqtt;
 */
 void ESPManager::setupMQTT() {
-  const char* mqttServer = _mqttConf.getMember("server").as<const char*>();
+  const char* mqttServer = _mqttConf.getMember(F("server")).as<const char*>();
   int mqttPort = _mqttConf.getMember(F("port")).as<int>();
 
   DBG("Setting MQTT: "); DBG(mqttServer); DBG("; port: "); DBGLN(mqttPort);
@@ -257,14 +258,11 @@ bool ESPManager::executeInteralTopics(const char * topic, const char * payload) 
         DBGLN("Invalid CMD JSON:");
         return false;
       }
-      int poz = findCmd(doc["cmd"]);
+      int poz = findCmd(doc[F("cmd")]);
       if (poz >= 0 && cmdFunctions[poz].func != nullptr) {
-        JsonVariant params = doc["params"].as<JsonVariant>();
+        JsonVariant params = doc[F("params")].as<JsonVariant>();
         (this->*cmdFunctions[poz].func)(params);
       }
-      return true;
-    } else if (topic == updateTopic) {
-      //      updateEsp(payload); //TODO to implement
       return true;
     }
   }
@@ -278,13 +276,9 @@ bool ESPManager::executeRegisteredTopics(const char * topic, const char * payloa
   return true;
 }
 
-void ESPManager::addIncomingEventHandler(const String topic, eventIncomingHandler handler) {
-  addIncomingEventHandler(topic.c_str(), handler);
-}
-
 void ESPManager::addIncomingEventHandler(const char * topic, eventIncomingHandler handler) {
 #ifndef DEBUG_SERIAL
-  if (topic != nullptr) {
+  if (topic == nullptr) {
     DBGLN("To subscribe, topic is mandatory");
   }
 #endif
@@ -294,13 +288,14 @@ void ESPManager::addIncomingEventHandler(const char * topic, eventIncomingHandle
   mqttCli.subscribe(topic, qos);
 };
 
-void ESPManager::addTimerOutputEventHandler(const String topic, long loopTime, outputTimerHandler handler) {
-  addTimerOutputEventHandler(topic.c_str(), loopTime, handler);
-}
-
 void ESPManager::addTimerOutputEventHandler(const char * topic, long loopTime, outputTimerHandler handler) {
   outputEvents[topic] = {handler, loopTime};
-};
+}
+
+void ESPManager::sendMsg(const char * topic, const char * msg, bool retain, int qos) {
+  mqttCli.publish(topic, msg, false, qos);
+}
+
 
 void ESPManager::reconnect() {
   mqttCli.disconnect();
@@ -365,7 +360,7 @@ void ESPManager::cmdGetInfo(JsonVariant params) {//TODO move to char *
                   ", \"freeSketchSpace\" : " + String(ESP.getFreeSketchSpace()) + "" +
                   ", \"flashChipRealSize\" : " + String(ESP.getFlashChipRealSize()) + "" +
                   ", \"espManagerVersion\" : \"" + getVersion() + "\"" +
-                  //                  ", \"sketchVersion\" : \"" + settings.getString("sketchVersion") + "\"" +
+                  ", \"sketchVersion\" : \"01\"" +
                   "}";
   const char * cmdTopic = _mqttConf.getMember(F("topics")).getMember(F("cmd")).as<const char*>();
   int qos = _mqttConf.getMember(F("qos")).as<int>();
@@ -380,13 +375,14 @@ void ESPManager::cmdUpdate(JsonVariant params) {
   DBGLN("Update triggered");
   if (params.isNull()) return;
 
-  const char * type = params["type"].as<const char *>();
-  const char * ver = params["version"].as<const char *>();
-  const char * url = params["url"].as<const char *>();
+  const char * type = params[F("type")].as<const char *>();
+  const char * ver = params[F("version")].as<const char *>();
+  const char * url = params[F("url")].as<const char *>();
   DBG("type: "); DBGLN(type);
   DBG("ver: "); DBGLN(ver);
   DBG("url: "); DBGLN(url);
-
+  
+  ESPhttpUpdate.setLedPin(LED_BUILTIN, HIGH);
   t_httpUpdate_return ret;
   if (strcmp_P(type, UPDATE_SKETCH_P) == 0) {
     DBGLN("updateTYPE");
@@ -397,7 +393,7 @@ void ESPManager::cmdUpdate(JsonVariant params) {
   }
   switch (ret) {
     case HTTP_UPDATE_FAILED:
-      DBG("HTTP_UPDATE_FAILD Error: ") + DBG(ESPhttpUpdate.getLastError()); DBG(" - "); DBGLN(ESPhttpUpdate.getLastErrorString());
+      DBG("HTTP_UPDATE_FAILD Error: "); DBG(ESPhttpUpdate.getLastError()); DBG(" - "); DBGLN(ESPhttpUpdate.getLastErrorString());
       DBGLN();
       break;
 
@@ -407,7 +403,7 @@ void ESPManager::cmdUpdate(JsonVariant params) {
 
     case HTTP_UPDATE_OK:
       DBGLN("HTTP_UPDATE_OK");
-      if (type == "spiffs") {
+      if (strcmp_P(type, UPDATE_SPIFFS_P) == 0) {
         mqttCli.disconnect();
         disconnectWifi();
         ESP.restart();

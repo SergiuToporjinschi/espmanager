@@ -33,9 +33,20 @@ class ESPManager {
     }
 
     void addIncomingEventHandler(const char * topic, eventIncomingHandler handler);
-    void addIncomingEventHandler(const String topic, eventIncomingHandler handler);
+    void addIncomingEventHandler(const String topic, eventIncomingHandler handler) {
+      addIncomingEventHandler(topic.c_str(), handler);
+    }
     void addTimerOutputEventHandler(const char * topic, long loopTime, outputTimerHandler handler);
-    void addTimerOutputEventHandler(const String topic, long loopTime, outputTimerHandler handler);
+    void addTimerOutputEventHandler(const String topic, long loopTime, outputTimerHandler handler) {
+      addTimerOutputEventHandler(topic.c_str(), loopTime, handler);
+    }
+    void sendMsg(const String topic, const String msg) {
+      sendMsg(topic.c_str(), msg.c_str(), false, qos);
+    };
+    void sendMsg(const String topic, const String msg,  bool retain, int qos) {
+      sendMsg(topic.c_str(), msg.c_str());
+    };
+    void sendMsg(const char * topic, const char * msg, bool retain, int qos);
   private:
     const char * version = "2.0.0";
     bool retainMsg = false;
