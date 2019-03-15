@@ -14,12 +14,10 @@
 	"retainMessage": true,
     "qos": 0,
     "topics":{
-      "settings":"IOT/espTest/settings",
       "cmd":"IOT/espTest/cmd",
       "status":"IOT/espTest/status"
     }
   },
-  "sketchVersion": "1.0",
   "submitData":{
     "topic":"env/bedroom/sc",
     "interval":1000
