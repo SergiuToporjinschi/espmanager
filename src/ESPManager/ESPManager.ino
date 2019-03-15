@@ -38,6 +38,7 @@ void setup() {
   JsonObject wlanConf = conf.getJsonObject("wlan");
   JsonObject mqttConf = conf.getJsonObject("mqtt");
   DBGLN("Start");
+  man.setSketchVersion("1.0.0");
   man.createConnections(wlanConf, mqttConf);
   man.addIncomingEventHandler("IOT/espTest/inc", onCall);
 //  man.addTimerOutputEventHandler("IOT/espTest/out", 2000, readTemp);

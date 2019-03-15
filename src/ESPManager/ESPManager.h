@@ -18,7 +18,8 @@ static const char STATUS_OFFLINE_P[] PROGMEM = "offline";
 static const char UPDATE_SKETCH_P[] PROGMEM = "sketch";
 static const char UPDATE_SPIFFS_P[] PROGMEM = "spiffs";
 
-static const char INFO_PATTERN_P[] PROGMEM = "{\"chipId\":%i,\"localIP\":\"%s\",\"macAddress\":\"%s\",\"lastRestartReson\":\"%s\",\"flashChipId\":%u,\"coreVersion\":\"%s\",\"sdkVersion\":\"%s\",\"vcc\":\"%1.2f V\",\"flashChipSpeed\":\"%u MHz\",\"cycleCount\":%u,\"cpuFreq\":\"%u MHz\", \"freeHeap\":%u,\"flashChipSize\":%u,\"sketchSize\":%u,\"freeSketchSpace\":%u,\"flashChipRealSize\":%u,\"espManagerVersion\":\"%s\",\"sketchVersion\":\"%s\"}";
+static const char SKETCH_VERSION_PATTERN_P[] = ",\"sketchVersion\":\"%s\"";
+static const char INFO_PATTERN_P[] PROGMEM = "{\"chipId\":%i,\"localIP\":\"%s\",\"macAddress\":\"%s\",\"lastRestartReson\":\"%s\",\"flashChipId\":%u,\"coreVersion\":\"%s\",\"sdkVersion\":\"%s\",\"vcc\":\"%1.2f V\",\"flashChipSpeed\":\"%u MHz\",\"cycleCount\":%u,\"cpuFreq\":\"%u MHz\", \"freeHeap\":%u,\"flashChipSize\":%u,\"sketchSize\":%u,\"freeSketchSpace\":%u,\"flashChipRealSize\":%u,\"espManagerVersion\":\"%s\"%s}";
 
 template<class... params> class Binding;
 class ESPManager {
@@ -29,10 +30,12 @@ class ESPManager {
     ~ESPManager();
     void createConnections(JsonObject wlanConf, JsonObject mqttConf);
     void loopIt();
-
-    const char * getVersion() {
-      return version;
-    }
+    void setSketchVersion(String ver) {
+      sketchVersion = ver.c_str();
+    };
+    void setSketchVersion(const char * ver) {
+      sketchVersion = ver;
+    };
 
     void addIncomingEventHandler(const char * topic, eventIncomingHandler handler);
     void addIncomingEventHandler(const String topic, eventIncomingHandler handler) {
@@ -51,6 +54,7 @@ class ESPManager {
     void sendMsg(const char * topic, const char * msg, bool retain, int qos);
   private:
     const char * version = "2.0.0";
+    const char * sketchVersion = nullptr;
     bool retainMsg = false;
     int qos = 0;
 

@@ -346,19 +346,24 @@ void ESPManager::cmdGetInfo(JsonVariant params) {
   DBGLN("cmdGetInfo");
   String coreVersion = ESP.getCoreVersion();
   coreVersion.replace("_", ".");
+
+  char skVerBuf[30] = {0};
+  if (sketchVersion != nullptr) {
+    snprintf_P(skVerBuf, 30, SKETCH_VERSION_PATTERN_P, sketchVersion);
+  }
   
   char retVal[500] = {0};
   snprintf_P(retVal, 500, INFO_PATTERN_P, ESP.getChipId(), WiFi.localIP().toString().c_str(), String(WiFi.macAddress()).c_str(), ESP.getResetReason().c_str(), ESP.getFlashChipId(), coreVersion.c_str(),
              ESP.getSdkVersion(), ESP.getVcc() / 1024.00f, ESP.getFlashChipSpeed() / 1000000, ESP.getCycleCount(), ESP.getCpuFreqMHz(), ESP.getFreeHeap(), ESP.getFlashChipSize(), ESP.getSketchSize(),
-             ESP.getFreeSketchSpace(), ESP.getFlashChipRealSize(), version, "1.0");
-             
+             ESP.getFreeSketchSpace(), ESP.getFlashChipRealSize(), version, skVerBuf);
+
   const char * cmdTopic = _mqttConf.getMember(F("topics")).getMember(F("cmd")).as<const char*>();
   int qos = _mqttConf.getMember(F("qos")).as<int>();
-  
+
   char topic[100] = {0};
   strcat(topic, cmdTopic);
   strcat(topic, "/resp");
-  
+
   mqttCli.publish(topic, retVal, false, qos);
 }
 
