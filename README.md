@@ -171,11 +171,11 @@ Will return json with following info in topic `configurationJSON.mqtt.topics.cmd
 #### **Update over the air**
 ```json
 {
-  "cmd":"update",                              //Command
-  "params":{                                   //Parameters for command
-    "type":"sketch",                           //What to update <sketch|spiffs>
-    "version":"4.0",                           //What's the version that needs to be installed
-    "url":"http://myServer.com/api/url/update" //From where the code can be requested
+  "cmd":"update",                              
+  "params":{                                   
+    "type":"sketch",                      
+    "version":"4.0",                          
+    "url":"http://myServer.com/api/url/update" 
   }
 }
 ```
