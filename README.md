@@ -66,21 +66,21 @@ On calling Sends the `msg` on `mqttTopic`;
 ## **Configuration example:**
 ```json
 {
-  "wlan":{                                //WiFi settings
+  "wlan":{                                
     "hostName":"espTest",
     "ssid":"mySSid",
     "password":"myPassword"
   },
-  "mqtt":{                                //MQTT Settings
+  "mqtt":{                               
     "clientId":"espCID",
     "server":"192.168.100.100",
     "port":"1888",
     "user":"mqttTestUser",
     "password":"mqttTestUser",
-    "sendOfflineStatus":true,             //Set lastwill message
+    "sendOfflineStatus":true,             
     "retainMessage": true,
     "qos": 0,
-    "topics":{                            //Internal topics
+    "topics":{                            
       "settings":"IOT/espTest/settings",
       "cmd":"IOT/espTest/cmd",
       "status":"IOT/espTest/status"
@@ -93,7 +93,7 @@ On calling Sends the `msg` on `mqttTopic`;
   }
 }
 ```
-<br>
+
 ## **Example:**
 ```cpp
 #include <ArduinoJson.h>
@@ -138,24 +138,24 @@ void onCall(const char * msg) {
 Will return json with following info in topic `configurationJSON.mqtt.topics.cmd + '/resp'`
 ```json
 {  
-  "chipId": 5078804,                     //Chip id
-  "localIP": "192.168.100.17",           //IP obtained on connecting to WiFi
-  "macAddress": "2C:3A:E8:4D:7F:14",     //WiFi MAC Address
-  "lastRestartReson": "External System", //reason of last restart
-  "flashChipId": 1323036,                //Flash chip id
-  "coreVersion": "2.5.0",                //ESP firmware version
-  "sdkVersion": "3.0.0-dev(c0f7b44)",    //ESP SDK Version
-  "vcc": "3.38 V",                       //Power voltaj
-  "flashChipSpeed":"40 MHz",             //Falsh chip speed
-  "cycleCount": 3554582419,              //Number of cycles from powering
-  "cpuFreq": "80 MHz",                   //CPU speed
-  "freeHeap": 44768,                     //Free heap
-  "flashChipSize": 1048576,              //Free chip size
-  "sketchSize": 339056,                  //Free chip size
-  "freeSketchSpace": 622592,             //Free sketch space
-  "flashChipRealSize": 1048576,          //Flash chip size
-  "espManagerVersion": "2.0.0",          //espManager version
-  "sketchVersion": "1.0"                 //Your sketchVersion
+  "chipId": 5078804,                     
+  "localIP": "192.168.100.17",           
+  "macAddress": "2C:3A:E8:4D:7F:14",     
+  "lastRestartReson": "External System", 
+  "flashChipId": 1323036,                
+  "coreVersion": "2.5.0",                
+  "sdkVersion": "3.0.0-dev(c0f7b44)",    
+  "vcc": "3.38 V",                       
+  "flashChipSpeed":"40 MHz",             
+  "cycleCount": 3554582419,             
+  "cpuFreq": "80 MHz",                   
+  "freeHeap": 44768,                     
+  "flashChipSize": 1048576,              
+  "sketchSize": 339056,                  
+  "freeSketchSpace": 622592,            
+  "flashChipRealSize": 1048576,          
+  "espManagerVersion": "2.0.0",          
+  "sketchVersion": "1.0"                 
 }
 ```
 #### **Ask for a reset**
