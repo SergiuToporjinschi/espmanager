@@ -1,0 +1,25 @@
+{
+  "wlan":{                                
+    "hostName":"espTest",
+    "ssid":"mySSid",
+    "password":"myPassword"
+  },
+  "mqtt":{                               
+    "clientId":"espCID",
+    "server":"192.168.1.1",
+    "port":"1888",
+    "user":"mqttTestUser",
+    "password":"mqttTestUser",
+    "sendOfflineStatus":true,             
+    "retainMessage": true,
+    "qos": 0,
+    "topics":{
+      "cmd":"IOT/espTest/cmd",
+      "status":"IOT/espTest/status"
+    }
+  },
+  "otherKeys":{
+    "topic":"env/bedroom/sc",
+    "interval":1000
+  }
+}
