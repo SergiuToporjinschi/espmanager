@@ -80,8 +80,7 @@ On calling Sends the `msg` on `mqttTopic`;
     "sendOfflineStatus":true,             
     "retainMessage": true,
     "qos": 0,
-    "topics":{                            
-      "settings":"IOT/espTest/settings",
+    "topics":{
       "cmd":"IOT/espTest/cmd",
       "status":"IOT/espTest/status"
     }
@@ -109,7 +108,7 @@ void setup() {
   conf.readSettings("/settings.json");
   JsonObject wlanConf = conf.getJsonObject("wlan");
   JsonObject mqttConf = conf.getJsonObject("mqtt");
-  
+
   man.setSketchVersion("1.0.0");
   man.createConnections(wlanConf, mqttConf);
   man.addIncomingEventHandler("IOT/espTest/inc", onCall);
