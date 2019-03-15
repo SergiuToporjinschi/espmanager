@@ -338,36 +338,27 @@ void ESPManager::cmdReset(JsonVariant params) {
 /**
    CMD: getInfo
    Serializing the settings and submit them in mqtt;
+  Sketch uses 335936 bytes (35%) of program storage space. Maximum is 958448 bytes.
+  Global variables use 30076 bytes (36%) of dynamic memory, leaving 51844 bytes for local variables. Maximum is 81920 bytes.
+
 */
-void ESPManager::cmdGetInfo(JsonVariant params) {//TODO move to char *
+void ESPManager::cmdGetInfo(JsonVariant params) {
   DBGLN("cmdGetInfo");
   String coreVersion = ESP.getCoreVersion();
   coreVersion.replace("_", ".");
-  String retVal = "{ \"chipId\": " + String(ESP.getChipId()) +
-                  ", \"localIP\" : \"" + WiFi.localIP().toString() + "\"" +
-                  ", \"macAddress\" : \"" + String(WiFi.macAddress()) + "\"" +
-                  ", \"lastRestartReson\" : \"" + ESP.getResetReason() + "\"" +
-                  ", \"flashChipId\" : " + String(ESP.getFlashChipId()) +
-                  ", \"coreVersion\" : \"" + coreVersion + "\"" +
-                  ", \"sdkVersion\" : \"" + ESP.getSdkVersion() + "\"" +
-                  ", \"vcc\" : " + String(ESP.getVcc() / 1024.00f) +
-                  ", \"flashChipSpeed\" : " + String(ESP.getFlashChipSpeed()) +
-                  ", \"cycleCount\" : " + String(ESP.getCycleCount()) +
-                  ", \"cpuFreq\" : " + String(ESP.getCpuFreqMHz() * 1000000) +
-                  ", \"freeHeap\": " + String(ESP.getFreeHeap()) +
-                  ", \"flashChipSize\" : " + String(ESP.getFlashChipSize()) +
-                  ", \"sketchSize\" : " + String(ESP.getSketchSize()) + "" +
-                  ", \"freeSketchSpace\" : " + String(ESP.getFreeSketchSpace()) + "" +
-                  ", \"flashChipRealSize\" : " + String(ESP.getFlashChipRealSize()) + "" +
-                  ", \"espManagerVersion\" : \"" + getVersion() + "\"" +
-                  ", \"sketchVersion\" : \"01\"" +
-                  "}";
+  
+  char retVal[500] = {0};
+  snprintf_P(retVal, 500, INFO_PATTERN_P, ESP.getChipId(), WiFi.localIP().toString().c_str(), String(WiFi.macAddress()).c_str(), ESP.getResetReason().c_str(), ESP.getFlashChipId(), coreVersion.c_str(),
+             ESP.getSdkVersion(), ESP.getVcc() / 1024.00f, ESP.getFlashChipSpeed() / 1000000, ESP.getCycleCount(), ESP.getCpuFreqMHz(), ESP.getFreeHeap(), ESP.getFlashChipSize(), ESP.getSketchSize(),
+             ESP.getFreeSketchSpace(), ESP.getFlashChipRealSize(), version, "1.0");
+             
   const char * cmdTopic = _mqttConf.getMember(F("topics")).getMember(F("cmd")).as<const char*>();
   int qos = _mqttConf.getMember(F("qos")).as<int>();
+  
   char topic[100] = {0};
-
   strcat(topic, cmdTopic);
   strcat(topic, "/resp");
+  
   mqttCli.publish(topic, retVal, false, qos);
 }
 
@@ -381,7 +372,7 @@ void ESPManager::cmdUpdate(JsonVariant params) {
   DBG("type: "); DBGLN(type);
   DBG("ver: "); DBGLN(ver);
   DBG("url: "); DBGLN(url);
-  
+
   ESPhttpUpdate.setLedPin(LED_BUILTIN, HIGH);
   t_httpUpdate_return ret;
   if (strcmp_P(type, UPDATE_SKETCH_P) == 0) {

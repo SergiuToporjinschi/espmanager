@@ -18,6 +18,8 @@ static const char STATUS_OFFLINE_P[] PROGMEM = "offline";
 static const char UPDATE_SKETCH_P[] PROGMEM = "sketch";
 static const char UPDATE_SPIFFS_P[] PROGMEM = "spiffs";
 
+static const char INFO_PATTERN_P[] PROGMEM = "{\"chipId\":%i,\"localIP\":\"%s\",\"macAddress\":\"%s\",\"lastRestartReson\":\"%s\",\"flashChipId\":%u,\"coreVersion\":\"%s\",\"sdkVersion\":\"%s\",\"vcc\":\"%1.2f V\",\"flashChipSpeed\":\"%u MHz\",\"cycleCount\":%u,\"cpuFreq\":\"%u MHz\", \"freeHeap\":%u,\"flashChipSize\":%u,\"sketchSize\":%u,\"freeSketchSpace\":%u,\"flashChipRealSize\":%u,\"espManagerVersion\":\"%s\",\"sketchVersion\":\"%s\"}";
+
 template<class... params> class Binding;
 class ESPManager {
   public:

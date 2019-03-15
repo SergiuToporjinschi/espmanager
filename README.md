@@ -125,7 +125,29 @@ void onCall(const char * msg) {
 ```json
 { "cmd":"getInfo" }
 ```
-
+Will return json with following info
+```json
+{  
+  "chipId": 5078804,
+  "localIP": "192.168.100.17",
+  "macAddress": "2C:3A:E8:4D:7F:14",
+  "lastRestartReson": "External System", //reason of last restart
+  "flashChipId": 1323036,
+  "coreVersion": "2.5.0",
+  "sdkVersion": "3.0.0-dev(c0f7b44)",
+  "vcc": "3.38 V",
+  "flashChipSpeed":"40 MHz",
+  "cycleCount": 3554582419,
+  "cpuFreq": "80 MHz",
+  "freeHeap": 44768,
+  "flashChipSize": 1048576,
+  "sketchSize": 339056,
+  "freeSketchSpace": 622592,
+  "flashChipRealSize": 1048576,          //
+  "espManagerVersion": "2.0.0",          //espManager version
+  "sketchVersion": "1.0"                 //your sketchVersion
+}
+```
 #### **Ask for a reset**
 ```json
 { "cmd":"reset" }
