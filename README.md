@@ -120,7 +120,7 @@ void loop() {
   man.loopIt();
 }
 
-const char * readTemp(const char * msg) {
+const char * readTemp(const char * topic) {
   return "{temp:39, humidity: 75}";
 };
 
