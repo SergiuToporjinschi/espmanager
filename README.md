@@ -5,7 +5,6 @@ Dependencies:
 * [arduino-mqtt](https://github.com/256dpi/arduino-mqtt)
 * [ESP8266WiFi](https://github.com/esp8266/Arduino/tree/master/libraries/ESP8266WiFi)
 * [ESP8266httpUpdate](https://github.com/esp8266/Arduino/tree/master/libraries/ESP8266httpUpdate)
-* [SettingsManager 2.0.1V](https://github.com/SergiuToporjinschi/settingsmanager)
 
 For details using SettingsManager please see the [read.me](https://github.com/SergiuToporjinschi/settingsmanager) file.
 ## Constructor
@@ -73,7 +72,7 @@ On calling Sends the `msg` on `mqttTopic`;
   },
   "mqtt":{                               
     "clientId":"espCID",
-    "server":"192.168.100.100",
+    "server":"192.168.1.1",
     "port":"1888",
     "user":"mqttTestUser",
     "password":"mqttTestUser",
@@ -85,7 +84,6 @@ On calling Sends the `msg` on `mqttTopic`;
       "status":"IOT/espTest/status"
     }
   },
-  "sketchVersion": "1.0",
   "otherKeys":{
     "topic":"env/bedroom/sc",
     "interval":1000
@@ -95,24 +93,31 @@ On calling Sends the `msg` on `mqttTopic`;
 
 ## **Example:**
 ```cpp
+
 #include <ArduinoJson.h>
 #include "ESPManager.h"
 #include "SettingsManager.h"
 
 const char * readTemp(const char * msg);
-
 SettingsManager conf;
 ESPManager man;
 
 void setup() {
+  Serial.begin(115200);
+  //Reading configuration from json file
   conf.readSettings("/settings.json");
+  //Splitting settings in wlanConf and MqttConf
   JsonObject wlanConf = conf.getJsonObject("wlan");
   JsonObject mqttConf = conf.getJsonObject("mqtt");
-
+  //Setting scketch ino verion 
   man.setSketchVersion("1.0.0");
+  //Creating connection to wlan and mqtt
   man.createConnections(wlanConf, mqttConf);
+  //Add listener on IOT/espTest/inc
   man.addIncomingEventHandler("IOT/espTest/inc", onCall);
+  //Adding timout trigger
   man.addTimerOutputEventHandler("IOT/espTest/out", 2000, readTemp);
+  //Send instant message on IOT/espTest/out
   man.sendMsg("IOT/espTest/out", "test");
 }
 
@@ -120,7 +125,7 @@ void loop() {
   man.loopIt();
 }
 
-const char * readTemp(const char * topic) {
+const char * readTemp(const char * msg) {
   return "{temp:39, humidity: 75}";
 };
 
