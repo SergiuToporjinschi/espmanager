@@ -53,7 +53,16 @@ Creates a listener on a specific MQTT topic and will execute the `onCall` when s
 ```cpp
 onCall<void(const char * msg)>
 ```
-* **msg** message received on MQTT;
+
+## **sendMsg**
+```cpp
+sendMsg(<const [string] | [const char *] mqttTopic>, <const [string] | [const char *] msg>)
+```
+
+On calling Sends the `msg` on `mqttTopic`;
+ * **mqttTopic** a (string/const char *) with MQTT topic;
+ * **msg** a (string/const char *) message that will be send;
+
 ## **Configuration example:**
 ```json
 {
@@ -69,7 +78,7 @@ onCall<void(const char * msg)>
     "user":"mqttTestUser",
     "password":"mqttTestUser",
     "sendOfflineStatus":true,             //Set lastwill message
-	"retainMessage": true,
+    "retainMessage": true,
     "qos": 0,
     "topics":{                            //Internal topics
       "settings":"IOT/espTest/settings",
@@ -104,6 +113,7 @@ void setup() {
   man.createConnections(wlanConf, mqttConf);
   man.addIncomingEventHandler("IOT/espTest/inc", onCall);
   man.addTimerOutputEventHandler("IOT/espTest/out", 2000, readTemp);
+  man.sendMsg("IOT/espTest/out", "test");
 }
 
 void loop() {
@@ -125,27 +135,27 @@ void onCall(const char * msg) {
 ```json
 { "cmd":"getInfo" }
 ```
-Will return json with following info
+Will return json with following info in topic `configurationJSON.mqtt.topics.cmd + '/resp'`
 ```json
 {  
-  "chipId": 5078804,
-  "localIP": "192.168.100.17",
-  "macAddress": "2C:3A:E8:4D:7F:14",
+  "chipId": 5078804,                     //Chip id
+  "localIP": "192.168.100.17",           //IP obtained on connecting to WiFi
+  "macAddress": "2C:3A:E8:4D:7F:14",     //WiFi MAC Address
   "lastRestartReson": "External System", //reason of last restart
-  "flashChipId": 1323036,
-  "coreVersion": "2.5.0",
-  "sdkVersion": "3.0.0-dev(c0f7b44)",
-  "vcc": "3.38 V",
-  "flashChipSpeed":"40 MHz",
-  "cycleCount": 3554582419,
-  "cpuFreq": "80 MHz",
-  "freeHeap": 44768,
-  "flashChipSize": 1048576,
-  "sketchSize": 339056,
-  "freeSketchSpace": 622592,
-  "flashChipRealSize": 1048576,          //
+  "flashChipId": 1323036,                //Flash chip id
+  "coreVersion": "2.5.0",                //ESP firmware version
+  "sdkVersion": "3.0.0-dev(c0f7b44)",    //ESP SDK Version
+  "vcc": "3.38 V",                       //Power voltaj
+  "flashChipSpeed":"40 MHz",             //Falsh chip speed
+  "cycleCount": 3554582419,              //Number of cycles from powering
+  "cpuFreq": "80 MHz",                   //CPU speed
+  "freeHeap": 44768,                     //Free heap
+  "flashChipSize": 1048576,              //Free chip size
+  "sketchSize": 339056,                  //Free chip size
+  "freeSketchSpace": 622592,             //Free sketch space
+  "flashChipRealSize": 1048576,          //Flash chip size
   "espManagerVersion": "2.0.0",          //espManager version
-  "sketchVersion": "1.0"                 //your sketchVersion
+  "sketchVersion": "1.0"                 //Your sketchVersion
 }
 ```
 #### **Ask for a reset**
@@ -161,8 +171,8 @@ Will return json with following info
 #### **Update over the air**
 ```json
 {
-  "cmd":"update",
-  "params":{
+  "cmd":"update",                              //Command
+  "params":{                                   //Parameters for command
     "type":"sketch",                           //What to update <sketch|spiffs>
     "version":"4.0",                           //What's the version that needs to be installed
     "url":"http://myServer.com/api/url/update" //From where the code can be requested
