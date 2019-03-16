@@ -217,7 +217,7 @@ void ESPManager::subscribeCMD() {
 */
 void ESPManager::loopIt() {
   mqttCli.loop();
-  delay(300);
+  //delay(300);
   //delay(settings.getInt("esp.delayTime"));  // <- fixes some issues with WiFi stability
 
   if (WiFi.status() != WL_CONNECTED || !mqttCli.connected()) {
