@@ -40,6 +40,12 @@ static const char UPDATE_SPIFFS_P[] PROGMEM = "spiffs";
 static const char SKETCH_VERSION_PATTERN_P[] = ",\"sketchVersion\":\"%s\"";
 static const char INFO_PATTERN_P[] PROGMEM = "{\"chipId\":%i,\"localIP\":\"%s\",\"macAddress\":\"%s\",\"lastRestartReson\":\"%s\",\"flashChipId\":%u,\"coreVersion\":\"%s\",\"sdkVersion\":\"%s\",\"vcc\":\"%1.2f V\",\"flashChipSpeed\":\"%u MHz\",\"cycleCount\":%u,\"cpuFreq\":\"%u MHz\", \"freeHeap\":%u,\"flashChipSize\":%u,\"sketchSize\":%u,\"freeSketchSpace\":%u,\"flashChipRealSize\":%u,\"espManagerVersion\":\"%s\"%s}";
 
+enum ESPManConnStatus {
+    CONNECTION_OK,
+    INVALID_WLAN_CONF,
+    INVLIAD_MQTT_CONF
+};
+
 template<class... params> class Binding;
 class ESPManager {
   public:
@@ -47,7 +53,7 @@ class ESPManager {
     using outputTimerHandler = std::function<const char *(const char *)>;
     ESPManager ();
     ~ESPManager();
-    void createConnections(JsonObject wlanConf, JsonObject mqttConf);
+    ESPManConnStatus createConnections(JsonObject wlanConf, JsonObject mqttConf);
     void loopIt();
     void setSketchVersion(String ver) {
       sketchVersion = ver.c_str();

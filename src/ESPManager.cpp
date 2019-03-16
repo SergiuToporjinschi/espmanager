@@ -44,15 +44,21 @@ ESPManager::ESPManager() {
    Connects to MQTT server
    Subscribe to MQTT topics set in config
 */
-void ESPManager::createConnections(JsonObject wlanConf, JsonObject mqttConf) {
+ESPManConnStatus ESPManager::createConnections(JsonObject wlanConf, JsonObject mqttConf) {
+  if (wlanConf.isNull()){
+    return INVALID_WLAN_CONF;
+  } else if (mqttConf.isNull()) {
+    return INVLIAD_MQTT_CONF;
+  }
+  
   _wlanConf = wlanConf;
   _mqttConf = mqttConf;
   createConnections();
+  return CONNECTION_OK;
 }
 
 void ESPManager::createConnections() {
-  sendOfflineStatus = _mqttConf.getMember(F("sendOfflineStatus")).as<bool>();
-  retainMsg = _mqttConf.getMember(F("retainMessage")).as<bool>();
+  retainMsg = !_mqttConf.getMember(F("retainMessage")).isNull() && _mqttConf.getMember(F("retainMessage")).as<bool>();
 
   if (!_mqttConf.getMember(F("qos")).isNull() && _mqttConf.getMember(F("qos")).is<int>()) {
     qos = _mqttConf.getMember(F("qos")).as<int>();
@@ -61,6 +67,8 @@ void ESPManager::createConnections() {
   connectToWifi();
   setupMQTT();
   connectToMQTT();
+
+  sendOfflineStatus = !_mqttConf.getMember(F("sendOfflineStatus")).isNull() && _mqttConf.getMember(F("sendOfflineStatus")).as<bool>();
   if (sendOfflineStatus) {
     setOnlineStatusMessage();
   }
@@ -217,7 +225,7 @@ void ESPManager::subscribeCMD() {
 */
 void ESPManager::loopIt() {
   mqttCli.loop();
-  //delay(300);
+  delay(10);
   //delay(settings.getInt("esp.delayTime"));  // <- fixes some issues with WiFi stability
 
   if (WiFi.status() != WL_CONNECTED || !mqttCli.connected()) {
