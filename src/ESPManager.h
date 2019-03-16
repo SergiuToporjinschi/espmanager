@@ -65,10 +65,13 @@ class ESPManager {
       addTimerOutputEventHandler(topic.c_str(), loopTime, handler);
     }
     void sendMsg(const String topic, const String msg) {
-      sendMsg(topic.c_str(), msg.c_str(), false, qos);
+      sendMsg(topic, msg, false, qos);
     };
-    void sendMsg(const String topic, const String msg,  bool retain, int qos) {
-      sendMsg(topic.c_str(), msg.c_str());
+    void sendMsg(const String topic, const String msg, bool retain, int qos) {
+      sendMsg(topic.c_str(), msg.c_str(), retain, qos);
+    };
+    void sendMsg(const char * topic, const char * msg) {
+      sendMsg(topic, msg, false, qos);
     };
     void sendMsg(const char * topic, const char * msg, bool retain, int qos);
   private:

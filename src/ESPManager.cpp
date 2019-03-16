@@ -269,8 +269,6 @@ bool ESPManager::executeInteralTopics(const char * topic, const char * payload) 
   if (!jsonTopics.isNull() && jsonTopics.is<JsonObject>()) {
     JsonObject topics = jsonTopics.as<JsonObject>();
     const char * cmdTopic = topics.getMember(F("cmd")).as<const char*>();
-    const char * settingsTopic = topics.getMember(F("settings")).as<const char*>();
-    const char * updateTopic = topics.getMember(F("update")).as<const char*>();
 
     if (strcmp(topic, cmdTopic) == 0) {
       DBG("cmd: "); DBG(topic); DBG(" - "); DBGLN(payload);
@@ -317,9 +315,8 @@ void ESPManager::addTimerOutputEventHandler(const char * topic, long loopTime, o
 }
 
 void ESPManager::sendMsg(const char * topic, const char * msg, bool retain, int qos) {
-  mqttCli.publish(topic, msg, false, qos);
+  mqttCli.publish(topic, msg, retain, qos);
 }
-
 
 void ESPManager::reconnect() {
   mqttCli.disconnect();
@@ -398,18 +395,19 @@ void ESPManager::cmdUpdate(JsonVariant params) {
   const char * type = params[F("type")].as<const char *>();
   const char * ver = params[F("version")].as<const char *>();
   const char * url = params[F("url")].as<const char *>();
+  
   DBG("type: "); DBGLN(type);
   DBG("ver: "); DBGLN(ver);
   DBG("url: "); DBGLN(url);
 
   ESPhttpUpdate.setLedPin(LED_BUILTIN, HIGH);
-  t_httpUpdate_return ret;
+  t_httpUpdate_return ret = HTTP_UPDATE_OK;
   if (strcmp_P(type, UPDATE_SKETCH_P) == 0) {
     DBGLN("updateTYPE");
-    ret = ESPhttpUpdate.update(url, ver);
+    ret = ESPhttpUpdate.update(net, url, ver);
   } else if (strcmp_P(type, UPDATE_SPIFFS_P) == 0) {
     DBGLN("updateSPIFFS");
-    ret = ESPhttpUpdate.updateSpiffs(url, ver);
+    ret = ESPhttpUpdate.updateSpiffs(net, url, ver);
   }
   switch (ret) {
     case HTTP_UPDATE_FAILED:
