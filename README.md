@@ -36,6 +36,7 @@ addTimerOutputEventHandler(<const [string] | [const char *] mqttTopic>, <long in
 ````
 
 Register a function to be executed on a time interval. The result of function `executeFn` will be send to `mqttTopic` once at `intervalToSubmit` milliseconds;
+NOTE: for c beginers: You need to allocate memory on heap to be able to return a char * this will be freed by manager.
 
  * **mqttTopic** a (string/const char *) with mqtt topic;
  * **intervalToSubmit** time to delay until next trigger;
