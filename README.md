@@ -43,7 +43,7 @@ Register a function to be executed on a time interval. The result of function `e
 
 
 ```cpp 
-executeFn<const char *(const char * topic)>
+executeFn<char *(const char * topic)>
 ```
  * **topic** MQTT topic where the return value will be send;
 
