@@ -100,8 +100,8 @@ class ESPManager {
     //Structure for keeping the handler and timing for executing
     struct outputTimerItem {
       outputTimerHandler handler;
-      long timing;
-      long lastTime;
+      unsigned long timing;
+      unsigned long lastTime;
     };
 
     //Structure for mapping commands to class functions

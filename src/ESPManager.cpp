@@ -319,7 +319,7 @@ void ESPManager::addIncomingEventHandler(const char * topic, eventIncomingHandle
 };
 
 void ESPManager::addTimerOutputEventHandler(const char * topic, long loopTime, outputTimerHandler handler) {
-  outputEvents[topic] = {handler, loopTime};
+  outputEvents[topic] = {handler, loopTime, 0};
 }
 
 void ESPManager::sendMsg(const char * topic, const char * msg, bool retain, int qos) {
