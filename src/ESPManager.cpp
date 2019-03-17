@@ -239,12 +239,13 @@ void ESPManager::executeTimingOutputEvents() {
   for (std::map<const char *, outputTimerItem>::iterator it = outputEvents.begin(); it != outputEvents.end(); ++it) {
     const char * key = it->first;
     if (millis() - outputEvents[key].lastTime > outputEvents[key].timing) {
-      const char * output = outputEvents[key].handler(key);
-      DBG("publishing to topic: "); DBG(key); DBG("- time:"); DBG(outputEvents[key].timing); DBG("; output: "); DBGLN(output);
-      outputEvents[key].lastTime = millis();
+	  outputEvents[key].lastTime = millis();
+      char * output = outputEvents[key].handler(key);
+      DBG("Publishing to topic: "); DBG(key); DBG("- time:"); DBG(outputEvents[key].timing); DBG("; output: "); DBGLN(strlen(output);
       if (strlen(output) > 0) {
         mqttCli.publish(key, output, false,  qos);
       }
+	  free(output);
     }
   }
 }

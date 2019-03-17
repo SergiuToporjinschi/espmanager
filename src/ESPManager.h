@@ -50,7 +50,7 @@ template<class... params> class Binding;
 class ESPManager {
   public:
     using eventIncomingHandler = std::function<void(const char *)>;
-    using outputTimerHandler = std::function<const char *(const char *)>;
+    using outputTimerHandler = std::function<char *(const char *)>;
     ESPManager ();
     ~ESPManager();
     ESPManConnStatus createConnections(JsonObject wlanConf, JsonObject mqttConf);
