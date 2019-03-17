@@ -1,5 +1,5 @@
 /*
-  ESPManager 2.0.0
+  ESPManager 2.0.2
 
   Copyright (C) 2018 by Sergiu Toporjinschi <sergiu dot toporjinschi at gmail dot com>
 
@@ -22,7 +22,7 @@
 #ifndef DEBUGER
 #define DBGLN(x)
 #define DBG(x)
-#else 
+#else
 #define DBGLN(x) Serial.println(x)
 #define DBG(x) Serial.print(x)
 #endif
@@ -45,12 +45,12 @@ ESPManager::ESPManager() {
    Subscribe to MQTT topics set in config
 */
 ESPManConnStatus ESPManager::createConnections(JsonObject wlanConf, JsonObject mqttConf) {
-  if (wlanConf.isNull()){
+  if (wlanConf.isNull()) {
     return INVALID_WLAN_CONF;
   } else if (mqttConf.isNull()) {
     return INVLIAD_MQTT_CONF;
   }
-  
+
   _wlanConf = wlanConf;
   _mqttConf = mqttConf;
   createConnections();
@@ -239,13 +239,13 @@ void ESPManager::executeTimingOutputEvents() {
   for (std::map<const char *, outputTimerItem>::iterator it = outputEvents.begin(); it != outputEvents.end(); ++it) {
     const char * key = it->first;
     if (millis() - outputEvents[key].lastTime > outputEvents[key].timing) {
-	  outputEvents[key].lastTime = millis();
+      outputEvents[key].lastTime = millis();
       char * output = outputEvents[key].handler(key);
-      DBG("Publishing to topic: "); DBG(key); DBG("- time:"); DBG(outputEvents[key].timing); DBG("; output: "); DBGLN(strlen(output);
+      DBG("Publishing to topic: "); DBG(key); DBG("- time:"); DBG(outputEvents[key].timing); DBG("; output: "); DBGLN(output);
       if (strlen(output) > 0) {
         mqttCli.publish(key, output, false,  qos);
       }
-	  free(output);
+      free(output);
     }
   }
 }
@@ -381,7 +381,7 @@ void ESPManager::cmdGetInfo(JsonVariant params) {
   if (sketchVersion != nullptr) {
     snprintf_P(skVerBuf, 30, SKETCH_VERSION_PATTERN_P, sketchVersion);
   }
-  
+
   char retVal[500] = {0};
   snprintf_P(retVal, 500, INFO_PATTERN_P, ESP.getChipId(), WiFi.localIP().toString().c_str(), String(WiFi.macAddress()).c_str(), ESP.getResetReason().c_str(), ESP.getFlashChipId(), coreVersion.c_str(),
              ESP.getSdkVersion(), ESP.getVcc() / 1024.00f, ESP.getFlashChipSpeed() / 1000000, ESP.getCycleCount(), ESP.getCpuFreqMHz(), ESP.getFreeHeap(), ESP.getFlashChipSize(), ESP.getSketchSize(),
@@ -404,7 +404,7 @@ void ESPManager::cmdUpdate(JsonVariant params) {
   const char * type = params[F("type")].as<const char *>();
   const char * ver = params[F("version")].as<const char *>();
   const char * url = params[F("url")].as<const char *>();
-  
+
   DBG("type: "); DBGLN(type);
   DBG("ver: "); DBGLN(ver);
   DBG("url: "); DBGLN(url);

@@ -105,7 +105,7 @@ On calling Sends the `msg` on `mqttTopic`;
 #include "ESPManager.h"
 #include "SettingsManager.h"
 
-const char * readTemp(const char * msg);
+char * readTemp(const char * msg);
 SettingsManager conf;
 ESPManager man;
 
@@ -116,7 +116,7 @@ void setup() {
   //Splitting settings in wlanConf and MqttConf
   JsonObject wlanConf = conf.getJsonObject("wlan");
   JsonObject mqttConf = conf.getJsonObject("mqtt");
-  //Setting scketch ino verion 
+  //Setting scketch ino verion
   man.setSketchVersion("1.0.0");
   //Creating connection to wlan and mqtt
   man.createConnections(wlanConf, mqttConf);
@@ -132,8 +132,11 @@ void loop() {
   man.loopIt();
 }
 
-const char * readTemp(const char * msg) {
-  return "{temp:39, humidity: 75}";
+char * readTemp(const char * msg) {
+  //Allocate memory, will be freed by manager
+  char * ret = (char *) malloc(25 * sizeof(char));
+  strcpy(ret, "{temp:39, humidity: 75}");
+  return ret;
 };
 
 void onCall(const char * msg) {
