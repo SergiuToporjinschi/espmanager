@@ -1,3 +1,10 @@
+[![GitHub repo size in bytes](https://img.shields.io/github/repo-size/badges/shields.svg)](https://github.com/SergiuToporjinschi/espmanager)
+[![GitHub last commit](https://img.shields.io/github/last-commit/SergiuToporjinschi/espmanager.svg)](https://github.com/SergiuToporjinschi/espmanager/commits/master)
+[![GitHub stars](https://img.shields.io/github/stars/SergiuToporjinschi/espmanager.svg)](https://github.com/SergiuToporjinschi/espmanager/stargazers)
+[![GitHub watchers](https://img.shields.io/github/watchers/SergiuToporjinschi/espmanager.svg)](https://github.com/SergiuToporjinschi/espmanager/watchers)
+[![GitHub license](https://img.shields.io/github/license/SergiuToporjinschi/espmanager.svg)](https://github.com/SergiuToporjinschi/espmanager/blob/master/LICENSE)
+[![Code Climate](https://codeclimate.com/github/codeclimate/codeclimate/badges/gpa.svg)](https://github.com/SergiuToporjinschi/espmanager)
+
 # ESPManager
 A wrapper over Wifi and MQTT.
 
