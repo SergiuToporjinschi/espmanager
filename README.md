@@ -37,8 +37,6 @@ addTimerOutputEventHandler(<const [string] | [const char *] mqttTopic>, <long in
 
 Register a function to be executed on a time interval. The result of function `executeFn` will be send to `mqttTopic` once at `intervalToSubmit` milliseconds;
 
-**NOTE** for beginers: You need to allocate memory on heap to be able to return a char * this will be freed by manager.
-
  * **mqttTopic** a (string/const char *) with mqtt topic;
  * **intervalToSubmit** time to delay until next trigger;
  * **executeFn** a function which returns the (const char *) that will be sent over MQTT;
@@ -48,6 +46,7 @@ Register a function to be executed on a time interval. The result of function `e
 executeFn<char *(const char * topic)>
 ```
  * **topic** MQTT topic where the return value will be send;
+ * can return nullptr for canceling submition;
 
 ## **addIncomingEventHandler**
 ```cpp
@@ -118,7 +117,7 @@ void setup() {
   //Splitting settings in wlanConf and MqttConf
   JsonObject wlanConf = conf.getJsonObject("wlan");
   JsonObject mqttConf = conf.getJsonObject("mqtt");
-  //Setting scketch ino verion
+  //Setting scketch ino verion 
   man.setSketchVersion("1.0.0");
   //Creating connection to wlan and mqtt
   man.createConnections(wlanConf, mqttConf);
