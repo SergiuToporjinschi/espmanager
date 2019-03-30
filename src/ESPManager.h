@@ -1,5 +1,5 @@
 /*
-  ESPManager 2.0.2
+  ESPManager 2.0.3
 
   Copyright (C) 2018 by Sergiu Toporjinschi <sergiu dot toporjinschi at gmail dot com>
 
@@ -81,7 +81,7 @@ class ESPManager {
     };
     void sendMsg(const char * topic, const char * msg, bool retain, int qos);
   private:
-    const char * version = "2.0.0";
+    const char * version = "2.0.3";
     const char * sketchVersion = nullptr;
     bool retainMsg = false;
     int qos = 0;

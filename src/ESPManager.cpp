@@ -1,5 +1,5 @@
 /*
-  ESPManager 2.0.2
+  ESPManager 2.0.3
 
   Copyright (C) 2018 by Sergiu Toporjinschi <sergiu dot toporjinschi at gmail dot com>
 
@@ -22,7 +22,7 @@
 #ifndef DEBUGER
 #define DBGLN(x)
 #define DBG(x)
-#else
+#else 
 #define DBGLN(x) Serial.println(x)
 #define DBG(x) Serial.print(x)
 #endif
@@ -239,10 +239,10 @@ void ESPManager::executeTimingOutputEvents() {
   for (std::map<const char *, outputTimerItem>::iterator it = outputEvents.begin(); it != outputEvents.end(); ++it) {
     const char * key = it->first;
     if (millis() - outputEvents[key].lastTime > outputEvents[key].timing) {
-      outputEvents[key].lastTime = millis();
       char * output = outputEvents[key].handler(key);
-      DBG("Publishing to topic: "); DBG(key); DBG("- time:"); DBG(outputEvents[key].timing); DBG("; output: "); DBGLN(output);
-      if (strlen(output) > 0) {
+      outputEvents[key].lastTime = millis();
+      if (output != nullptr && strlen(output) > 0) {
+	    DBG("publishing to topic: "); DBG(key); DBG(" time:"); DBG(outputEvents[key].timing); DBG("; output: "); DBGLN(output);
         mqttCli.publish(key, output, false,  qos);
       }
       free(output);
