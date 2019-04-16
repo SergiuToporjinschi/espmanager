@@ -1,5 +1,5 @@
 /*
-  ESPManager 2.0.4
+  ESPManager 2.0.3
 
   Copyright (C) 2018 by Sergiu Toporjinschi <sergiu dot toporjinschi at gmail dot com>
 
