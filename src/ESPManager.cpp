@@ -17,21 +17,11 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
-//#define DEBUGER
-
-#ifndef DEBUGER
-#define DBGLN(x)
-#define DBG(x)
-#else 
-#define DBGLN(x) Serial.println(x)
-#define DBG(x) Serial.print(x)
-#endif
-
 #include "ESPManager.h"
 ADC_MODE(ADC_VCC);
 
 ESPManager::ESPManager() {
-  mqttCli = *new MQTTClient(800);
+  mqttCli = *new MQTTClient(MQTT_BUFFER);
   wifiMode = WIFI_STA;
   cbBind = new Binding<String &, String &>(*this, &ESPManager::messageReceived);
 }
@@ -264,7 +254,7 @@ void ESPManager::messageReceived(String & topic, String & payload) {
 }
 
 int ESPManager::findCmd(const char * cmd) {
-  for (int i = 0; (i < sizeof(cmdFunctions) / sizeof(cmdFunctions[0])) && strlen(cmdFunctions[i].cmd) > 0; i++) {
+  for (unsigned int i = 0; (i < sizeof(cmdFunctions) / sizeof(cmdFunctions[0])) && strlen(cmdFunctions[i].cmd) > 0; i++) {
     if (strcmp(cmdFunctions[i].cmd, cmd) == 0) {
       return i;
     }
@@ -319,7 +309,7 @@ void ESPManager::addIncomingEventHandler(const char * topic, eventIncomingHandle
   mqttCli.subscribe(topic, qos);
 };
 
-void ESPManager::addTimerOutputEventHandler(const char * topic, long loopTime, outputTimerHandler handler) {
+void ESPManager::addTimerOutputEventHandler(const char * topic, unsigned long  loopTime, outputTimerHandler handler) {
   outputEvents[topic] = {handler, loopTime, 0};
 }
 

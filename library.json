@@ -1,0 +1,19 @@
+{
+    "name": "espManager",
+    "description": "A wrapper for connection an ESP8266-01 to wifi, mqtt and create a small comunication",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/SergiuToporjinschi/espmanager"
+    },
+    "keywords": "ESP, ESP8266, IOT, WIFI, OTA",
+    "Authors": "Sergiu Toporjinschi",
+    "version": "2.0.3",
+    "frameworks": "*",
+    "platforms": "espressif8266",
+    "dependencies": {
+        "ArduinoJson": "^6.10.0"
+    },
+    "examples": [
+        "examples/*.cpp"
+    ]
+}

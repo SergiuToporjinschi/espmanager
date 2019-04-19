@@ -19,8 +19,8 @@
 */
 #ifndef ESPManager_h
 #define ESPManager_h
-
 #include <stdlib.h>
+#include "Macro.h"
 #include "Arduino.h"
 #include <ArduinoJson.h>
 #include <MQTTClient.h>
@@ -66,8 +66,8 @@ class ESPManager {
     void addIncomingEventHandler(const String topic, eventIncomingHandler handler) {
       addIncomingEventHandler(topic.c_str(), handler);
     }
-    void addTimerOutputEventHandler(const char * topic, long loopTime, outputTimerHandler handler);
-    void addTimerOutputEventHandler(const String topic, long loopTime, outputTimerHandler handler) {
+    void addTimerOutputEventHandler(const char * topic, unsigned long loopTime, outputTimerHandler handler);
+    void addTimerOutputEventHandler(const String topic, unsigned long loopTime, outputTimerHandler handler) {
       addTimerOutputEventHandler(topic.c_str(), loopTime, handler);
     }
     void sendMsg(const String topic, const String msg) {
@@ -81,7 +81,7 @@ class ESPManager {
     };
     void sendMsg(const char * topic, const char * msg, bool retain, int qos);
   private:
-    const char * version = "2.0.3";
+    const char * version = VER;
     const char * sketchVersion = nullptr;
     bool retainMsg = false;
     int qos = 0;
