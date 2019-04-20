@@ -8,7 +8,8 @@ env = DefaultEnvironment()
 
 # copyfile("src/WiFiConnector.h", "tmp/WiFiConnector/WiFiConnector.h")
 # copyfile("src/WiFiConnector.cpp", "tmp/WiFiConnector/WiFiConnector.cpp")
-shutil.rmtree("pio_compile")
+if os.path.exists("pio_compile"):
+    shutil.rmtree("pio_compile")
 os.makedirs("pio_compile")
 
 
