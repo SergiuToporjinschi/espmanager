@@ -8,15 +8,15 @@ env = DefaultEnvironment()
 
 # copyfile("src/WiFiConnector.h", "tmp/WiFiConnector/WiFiConnector.h")
 # copyfile("src/WiFiConnector.cpp", "tmp/WiFiConnector/WiFiConnector.cpp")
-if os.path.exists("pio_compile"):
-    shutil.rmtree("pio_compile")
-os.makedirs("pio_compile")
+if os.path.exists(".pio_compile"):
+    shutil.rmtree(".pio_compile")
+os.makedirs(".pio_compile")
 
 
 for file in glob.iglob('src/*.*'):
     print 'Copied file %s' % (file)
-    shutil.copy2(file, "pio_compile")
+    shutil.copy2(file, ".pio_compile")
 
 for file in glob.iglob('examples/**/*.*'):
     print 'Copied file %s' % (file)
-    shutil.copy2(file, "pio_compile")
+    shutil.copy2(file, ".pio_compile")
