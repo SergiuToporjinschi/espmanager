@@ -31,16 +31,43 @@ ESPManager man;
 
 void setup() {
   Serial.begin(115200);
+
   //Reading configuration from json file
   conf.readSettings("/settings.json");
+
   //Splitting settings in wlanConf and MqttConf
   JsonObject wlanConf = conf.getJsonObject("wlan");
   JsonObject mqttConf = conf.getJsonObject("mqtt");
+
   //Setting scketch ino verion
   man.setSketchVersion("1.0.0");
+
+  //adding events for waiting connection at WiFi
+  man.onBeforeWaitingWiFiCon([]() {
+    Serial.println("onBeforeWaitingWiFiCon");
+  });
+  man.onWaitingWiFiCon([]() {
+    Serial.print("#");
+  });
+  man.onAfterWaitingWiFiCon([]() {
+    Serial.println("onAfterWaitingWiFiCon");
+  });
+
+  //adding events for waiting connection at MQTT
+  man.onBeforeWaitingMQTTCon([]() {
+    Serial.println("onBeforeWaitingMQTTCon");
+  });
+  man.onWaitingMQTTCon([]() {
+    Serial.print("-");
+  });
+  man.onAfterWaitingMQTTCon([]() {
+    Serial.println("onAfterWaitingMQTTCon");
+  });
+
   //Creating connection to wlan and mqtt
   man.createConnections(wlanConf, mqttConf);
-  //Add listener on IOT/espTest/inc
+
+  // Add listener on IOT/espTest/inc
   man.addIncomingEventHandler("IOT/espTest/inc", onCall);
   //Adding timout trigger
   man.addTimerOutputEventHandler("IOT/espTest/out", 2000, readTemp);

@@ -66,8 +66,8 @@ class ESPManager {
     void addIncomingEventHandler(const String topic, eventIncomingHandler handler) {
       addIncomingEventHandler(topic.c_str(), handler);
     }
-    void addTimerOutputEventHandler(const char * topic, long loopTime, outputTimerHandler handler);
-    void addTimerOutputEventHandler(const String topic, long loopTime, outputTimerHandler handler) {
+    void addTimerOutputEventHandler(const char * topic, unsigned long loopTime, outputTimerHandler handler);
+    void addTimerOutputEventHandler(const String topic, unsigned long loopTime, outputTimerHandler handler) {
       addTimerOutputEventHandler(topic.c_str(), loopTime, handler);
     }
     void sendMsg(const String topic, const String msg) {
@@ -80,11 +80,28 @@ class ESPManager {
       sendMsg(topic, msg, false, qos);
     };
     void sendMsg(const char * topic, const char * msg, bool retain, int qos);
+    
+    void onBeforeWaitingWiFiCon(std::function<void()> func) { this->beforeWaitingWiFiCon = func; };
+    void onWaitingWiFiCon(std::function<void()> func) { this->waitingWiFiCon = func; };
+    void onAfterWaitingWiFiCon(std::function<void()> func) { this->afterWaitingWiFiCon = func; };
+   
+    void onBeforeWaitingMQTTCon(std::function<void()> func) { this->beforeWaitingMQTTCon = func; };
+    void onWaitingMQTTCon(std::function<void()> func) { this->waitingMQTTCon = func; };
+    void onAfterWaitingMQTTCon(std::function<void()> func) { this->afterWaitingMQTTCon = func; };
+
   private:
     const char * version = "2.0.3";
     const char * sketchVersion = nullptr;
     bool retainMsg = false;
     int qos = 0;
+  
+    std::function<void()> beforeWaitingWiFiCon;
+    std::function<void()> waitingWiFiCon;
+    std::function<void()> afterWaitingWiFiCon;
+  
+    std::function<void()> beforeWaitingMQTTCon;
+    std::function<void()> waitingMQTTCon;
+    std::function<void()> afterWaitingMQTTCon;
 
     WiFiClient net;
     JsonObject _wlanConf; //WLAN settings

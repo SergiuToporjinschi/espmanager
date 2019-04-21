@@ -96,10 +96,19 @@ void ESPManager::connectToWifi() {
    Wait to be connected in wifi;
 */
 void ESPManager::waitForWiFi() {
+  if (this->beforeWaitingWiFiCon != nullptr) {
+    this->beforeWaitingWiFiCon();
+  }
   int waitingTime = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - waitingTime  < 30000) {
+  while (WiFi.status() != WL_CONNECTED && millis() - waitingTime < 30000) {
     DBG("#");
-    delay(100);
+    if (this->waitingWiFiCon != nullptr) {
+      this->waitingWiFiCon();
+    }
+    delay(10);
+  }
+  if (this->afterWaitingWiFiCon != nullptr) {
+    this->afterWaitingWiFiCon();
   }
   DBGLN("");
   if (WiFi.status() != WL_CONNECTED) {
@@ -180,9 +189,18 @@ void ESPManager::connectToMQTT() {
   const char * password = _mqttConf.getMember(F("password")).as<const char*>();
 
   DBG("Client: "); DBG(clientId); DBG("; User: ");  DBG(user); DBG("; Password: "); DBGLN(password);
+  if (this->beforeWaitingMQTTCon != nullptr) {
+    this->beforeWaitingMQTTCon();
+  }
   while (!mqttCli.connect(clientId, user, password)) {
     DBG("_");
-    delay(1000);
+    if (this->waitingMQTTCon != nullptr) {
+      this->waitingMQTTCon();
+    }
+    delay(10);
+  }
+  if (this->afterWaitingMQTTCon != nullptr) {
+    this->afterWaitingMQTTCon();
   }
   DBGLN("");
   DBGLN("Connected!");
@@ -319,7 +337,7 @@ void ESPManager::addIncomingEventHandler(const char * topic, eventIncomingHandle
   mqttCli.subscribe(topic, qos);
 };
 
-void ESPManager::addTimerOutputEventHandler(const char * topic, long loopTime, outputTimerHandler handler) {
+void ESPManager::addTimerOutputEventHandler(const char * topic, unsigned long loopTime, outputTimerHandler handler) {
   outputEvents[topic] = {handler, loopTime, 0};
 }
 

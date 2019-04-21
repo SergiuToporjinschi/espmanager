@@ -29,6 +29,19 @@ createConnections(<JsonObject wlanConf>, <JsonObject mqttConf>);
  * Creates connection on MQTT;
  * Setting lastWill message;
  * Subscribe to cmd topic;
+ 
+## **createConnections**
+```cpp
+    void onBeforeWaitingWiFiCon(std::function<void()> func) { this->beforeWaitingWiFiCon = func; };
+    void onWaitingWiFiCon(std::function<void()> func) { this->waitingWiFiCon = func; };
+    void onAfterWaitingWiFiCon(std::function<void()> func) { this->afterWaitingWiFiCon = func; };
+   
+    void onBeforeWaitingMQTTCon(std::function<void()> func) { this->beforeWaitingMQTTCon = func; };
+    void onWaitingMQTTCon(std::function<void()> func) { this->waitingMQTTCon = func; };
+    void onAfterWaitingMQTTCon(std::function<void()> func) { this->afterWaitingMQTTCon = func; };
+```
+You can add events to be triggered on WiFi Connection or MQTT;
+This methods will be executed before starting connection, while waiting for connection or after connection process has finisied; `onAfterWaiting` will be executed if the connection has been made or not.
 
 ## **addTimerOutputEventHandler**
 ```cpp
