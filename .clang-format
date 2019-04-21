@@ -5,17 +5,18 @@ ColumnLimit: 0
 AccessModifierOffset: -1
 NamespaceIndentation: All
 BreakBeforeBraces: Custom
+AlwaysBreakAfterDefinitionReturnType: None
 BraceWrapping:
-  AfterEnum: true
-  AfterStruct: true
+  AfterEnum: false
+  AfterStruct: false
   AfterClass: false
-  SplitEmptyFunction: true
+  SplitEmptyFunction: false
   AfterControlStatement: false
   AfterNamespace: false
   AfterFunction: false
-  AfterUnion: true
+  AfterUnion: false
   AfterExternBlock: false
   BeforeCatch: false
   BeforeElse: false
-  SplitEmptyRecord: true
-  SplitEmptyNamespace: true
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
