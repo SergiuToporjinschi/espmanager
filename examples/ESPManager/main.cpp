@@ -49,7 +49,7 @@ void setup() {
     Serial.println("onBeforeWaitingWiFiCon");
   });
   man.onWaitingWiFiCon([]() {
-    Serial.println("#");
+    Serial.print("#");
   });
   man.onAfterWaitingWiFiCon([]() {
     Serial.println("onAfterWaitingWiFiCon");
@@ -60,7 +60,7 @@ void setup() {
     Serial.println("onBeforeWaitingMQTTCon");
   });
   man.onWaitingMQTTCon([]() {
-    Serial.println("-");
+    Serial.print("-");
   });
   man.onAfterWaitingMQTTCon([]() {
     Serial.println("onAfterWaitingMQTTCon");
