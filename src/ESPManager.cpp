@@ -92,8 +92,8 @@ void ESPManager::waitForWiFi() {
   int waitingTime = millis();
   while (WiFi.status() != WL_CONNECTED && millis() - waitingTime < 30000) {
     DBG("#");
-    if (this->afterWaitingWiFiCon != nullptr) {
-      this->afterWaitingWiFiCon();
+    if (this->waitingWiFiCon != nullptr) {
+      this->waitingWiFiCon();
     }
     delay(10);
   }
