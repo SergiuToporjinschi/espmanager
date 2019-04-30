@@ -81,13 +81,13 @@ void loop() {
   man.loopIt();
 }
 
-char * readTemp(const char * msg) {
+char *readTemp(const char *msg) {
   //Allocate memory, will be freed by manager
-  char * ret = (char *) malloc(25 * sizeof(char));
+  char *ret = (char *)malloc(25 * sizeof(char));
   strcpy(ret, "{temp:39, humidity: 75}");
   return ret;
 };
 
-void onCall(const char * msg) {
+void onCall(const char *msg) {
   Serial.println(msg);
 };

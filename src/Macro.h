@@ -3,7 +3,7 @@
 #ifndef DEBUGER
 #define DBGLN(x)
 #define DBG(x)
-#else 
+#else
 #define DBGLN(x) Serial.println(x)
 #define DBG(x) Serial.print(x)
 #endif
