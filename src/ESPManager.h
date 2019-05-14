@@ -136,9 +136,9 @@ class ESPManager {
   };
 
   //Command list key and execution method
-  FunctionMap cmdFunctions[4] = {
+  FunctionMap cmdFunctions[5] = {
       {"reconnect", &ESPManager::cmdReconnect},
-      //{"restart", &ESPManager::cmdRestart}, --> currently disabled, it crashes the esp see https://github.com/SergiuToporjinschi/espmanager/issues/3
+      {"restart", &ESPManager::cmdRestart}, //--> currently disabled, it crashes the esp see https://github.com/SergiuToporjinschi/espmanager/issues/3
       {"reset", &ESPManager::cmdReset},
       {"update", &ESPManager::cmdUpdate},
       {"getInfo", &ESPManager::cmdGetInfo}};
