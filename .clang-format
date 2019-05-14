@@ -6,6 +6,7 @@ AccessModifierOffset: -1
 NamespaceIndentation: All
 BreakBeforeBraces: Custom
 AlwaysBreakAfterDefinitionReturnType: None
+IndentPPDirectives: AfterHash
 BraceWrapping:
   AfterEnum: false
   AfterStruct: false

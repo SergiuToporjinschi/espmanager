@@ -26,6 +26,10 @@ ESPManager::ESPManager() {
   cbBind = new Binding<String &, String &>(*this, &ESPManager::messageReceived);
 }
 
+void ESPManager::addCommand(const char *cmd, cmdFunction handler) {
+  commands[cmd] = handler;
+}
+
 /**
    ---==[ This needs to be call in setup function ]==---
    Creates connection to WiFi;
@@ -43,10 +47,26 @@ ESPManConnStatus ESPManager::createConnections(JsonObject wlanConf, JsonObject m
 
   _wlanConf = wlanConf;
   _mqttConf = mqttConf;
-  createConnections();
+  readconfiguration();
+
+  // createConnections();
   return CONNECTION_OK;
 }
 
+void ESPManager::readconfiguration() {
+  sendOfflineStatus = !_mqttConf.getMember(F("sendOfflineStatus")).isNull() && _mqttConf.getMember(F("sendOfflineStatus")).as<bool>();
+
+  JsonVariant mqttTopics = _mqttConf.getMember(F("topics"));
+  if (!mqttTopics.isNull()) {
+    JsonVariant mqttTopicsCmd = mqttTopics.getMember(F("cmd"));
+    if (!mqttTopicsCmd.isNull()) {
+      cmdTopic = mqttTopicsCmd.as<const char *>();
+      DBGLN(cmdTopic);
+      strcpy(cmdTopicResp, cmdTopic);
+      strcat(cmdTopicResp, "/resp");
+    }
+  }
+}
 void ESPManager::createConnections() {
   retainMsg = !_mqttConf.getMember(F("retainMessage")).isNull() && _mqttConf.getMember(F("retainMessage")).as<bool>();
 
@@ -58,7 +78,6 @@ void ESPManager::createConnections() {
   setupMQTT();
   connectToMQTT();
 
-  sendOfflineStatus = !_mqttConf.getMember(F("sendOfflineStatus")).isNull() && _mqttConf.getMember(F("sendOfflineStatus")).as<bool>();
   if (sendOfflineStatus) {
     setOnlineStatusMessage();
   }
@@ -96,7 +115,6 @@ void ESPManager::waitForWiFi() {
   while (WiFi.status() != WL_CONNECTED && millis() - waitingTime < 30000) {
     DBG("#");
     if (this->waitingWiFiCon != nullptr) {
-      DBGLN("hasWaiting");
       this->waitingWiFiCon();
     }
     delay(10);
@@ -189,7 +207,13 @@ void ESPManager::setOnlineStatusMessage() {
 */
 void ESPManager::connectToMQTT() {
   DBGLN("Connecting mqtt...");
-  const char *clientId = _mqttConf.getMember(F("clientId")).as<const char *>();
+  const char *clientId;
+  JsonVariant client = _mqttConf.getMember(F("clientId"));
+  if (!client.isNull()) {
+    clientId = _mqttConf.getMember(F("clientId")).as<const char *>();
+  } else {
+    clientId = _wlanConf.getMember(F("hostName"));
+  }
   const char *user = _mqttConf.getMember(F("user")).as<const char *>();
   const char *password = _mqttConf.getMember(F("password")).as<const char *>();
 
@@ -291,15 +315,17 @@ void ESPManager::executeTimingOutputEvents() {
    param @payload = payload, message
 */
 void ESPManager::messageReceived(String &topic, String &payload) {
-  if (executeInteralTopics(topic.c_str(), payload.c_str()))
-    return;
-  if (executeRegisteredTopics(topic.c_str(), payload.c_str()))
-    return;
-  DBGLN("messageReceived: No method found");
+  if (cmdTopic != nullptr && strcmp(topic.c_str(), cmdTopic) == 0) {
+    executeCommands(topic.c_str(), payload.c_str());
+  } else if (inputEvents.find(topic.c_str()) != inputEvents.end()) {
+    inputEvents[topic.c_str()](payload.c_str());
+  } else {
+    DBGLN("messageReceived: No method found");
+  }
 }
 
 int ESPManager::findCmd(const char *cmd) {
-  for (int i = 0; (i < sizeof(cmdFunctions) / sizeof(cmdFunctions[0])) && strlen(cmdFunctions[i].cmd) > 0; i++) {
+  for (unsigned int i = 0; (i < sizeof(cmdFunctions) / sizeof(cmdFunctions[0])) && strlen(cmdFunctions[i].cmd) > 0; i++) {
     if (strcmp(cmdFunctions[i].cmd, cmd) == 0) {
       return i;
     }
@@ -307,45 +333,42 @@ int ESPManager::findCmd(const char *cmd) {
   return -1;
 }
 
-bool ESPManager::executeInteralTopics(const char *topic, const char *payload) {
-  JsonVariant jsonTopics = _mqttConf.getMember(F("topics"));
-
-  if (!jsonTopics.isNull() && jsonTopics.is<JsonObject>()) {
-    JsonObject topics = jsonTopics.as<JsonObject>();
-    const char *cmdTopic = topics.getMember(F("cmd")).as<const char *>();
-
-    if (strcmp(topic, cmdTopic) == 0) {
-      DBG("cmd: ");
-      DBG(topic);
-      DBG(" - ");
-      DBGLN(payload);
-
-      const size_t capacity = JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3) + 110;
-      StaticJsonDocument<capacity> doc;
-      DeserializationError err = deserializeJson(doc, payload);
-      if (err) {
-        DBGLN("Invalid CMD JSON:");
-        return false;
-      }
-      int poz = findCmd(doc[F("cmd")]);
-      if (poz >= 0 && cmdFunctions[poz].func != nullptr) {
-        JsonVariant params = doc[F("params")].as<JsonVariant>();
-        (this->*cmdFunctions[poz].func)(params);
-      }
-      return true;
-    }
-  }
-  return false;
-}
-
-bool ESPManager::executeRegisteredTopics(const char *topic, const char *payload) {
-  DBG("executeRegisteredTopics: ");
-  DBG(topic);
-  DBG(" - ");
+void ESPManager::executeCommands(const char *topic, const char *payload) {
+  DBGLN("Executing CMD");
   DBGLN(payload);
-  if (inputEvents.find(topic) != inputEvents.end() && inputEvents[topic] != nullptr)
-    inputEvents[topic](payload);
-  return true;
+  StaticJsonDocument<1500> payloadDoc;
+  DeserializationError err = deserializeJson(payloadDoc, payload);
+  if (err) {
+    DBG("Could not deserialie json:");
+    DBGLN(err.c_str());
+    payloadDoc.clear();
+    return;
+  }
+
+  const char *cmd = payloadDoc[F("cmd")].as<JsonVariant>().as<char *>();
+  JsonVariant params = payloadDoc[F("params")].as<JsonVariant>();
+  DBG("CMD:");
+  DBGLN(cmd);
+  // look in registered commands
+  if (!commands.empty() && commands.find(cmd) != commands.end()) {
+    char *output = commands[cmd](params);
+    if (output != nullptr) {
+      DBG("Response to: ");
+      DBGLN(cmdTopicResp);
+      mqttCli.publish(cmdTopicResp, output, false, qos);
+    }
+    free(output);
+    payloadDoc.clear();
+    return;
+  }
+
+  // look in internal commands list
+  int poz = findCmd(cmd);
+  if (poz >= 0 && cmdFunctions[poz].func != nullptr) {
+    (this->*cmdFunctions[poz].func)(cmdTopicResp, params);
+    payloadDoc.clear();
+    return;
+  }
 }
 
 void ESPManager::addIncomingEventHandler(const char *topic, eventIncomingHandler handler) {
@@ -381,16 +404,15 @@ void ESPManager::reconnect() {
    CMD: reconnect
    Is disconnecting MQTT client, is disconnecting from WiFi, recreats all connections again;
 */
-void ESPManager::cmdReconnect(JsonVariant params) {
+void ESPManager::cmdReconnect(const char *respTopic, JsonVariant params) {
   DBGLN("cmdReconnect");
   reconnect();
 }
-
 /**
    CMD: restart
    Is disconnecting MQTT client, is disconnecting from WiFi, restarts the entire ESP;
 */
-void ESPManager::cmdRestart(JsonVariant params) {
+void ESPManager::cmdRestart(const char *respTopic, JsonVariant params) {
   DBGLN("cmdRestart");
   mqttCli.disconnect();
   disconnectWifi();
@@ -401,7 +423,7 @@ void ESPManager::cmdRestart(JsonVariant params) {
    CMD: restart
    Is disconnecting MQTT client, is disconnecting from WiFi, resets the entire ESP;
 */
-void ESPManager::cmdReset(JsonVariant params) {
+void ESPManager::cmdReset(const char *respTopic, JsonVariant params) {
   DBGLN("cmdReset");
   mqttCli.disconnect();
   disconnectWifi();
@@ -415,7 +437,7 @@ void ESPManager::cmdReset(JsonVariant params) {
   Global variables use 30076 bytes (36%) of dynamic memory, leaving 51844 bytes for local variables. Maximum is 81920 bytes.
 
 */
-void ESPManager::cmdGetInfo(JsonVariant params) {
+void ESPManager::cmdGetInfo(const char *respTopic, JsonVariant params) {
   DBGLN("cmdGetInfo");
   String coreVersion = ESP.getCoreVersion();
   coreVersion.replace("_", ".");
@@ -430,17 +452,11 @@ void ESPManager::cmdGetInfo(JsonVariant params) {
              ESP.getSdkVersion(), ESP.getVcc() / 1024.00f, ESP.getFlashChipSpeed() / 1000000, ESP.getCycleCount(), ESP.getCpuFreqMHz(), ESP.getFreeHeap(), ESP.getFlashChipSize(), ESP.getSketchSize(),
              ESP.getFreeSketchSpace(), ESP.getFlashChipRealSize(), version, skVerBuf);
 
-  const char *cmdTopic = _mqttConf.getMember(F("topics")).getMember(F("cmd")).as<const char *>();
   int qos = _mqttConf.getMember(F("qos")).as<int>();
-
-  char topic[100] = {0};
-  strcat(topic, cmdTopic);
-  strcat(topic, "/resp");
-
-  mqttCli.publish(topic, retVal, false, qos);
+  mqttCli.publish(respTopic, retVal, false, qos);
 }
 
-void ESPManager::cmdUpdate(JsonVariant params) {
+void ESPManager::cmdUpdate(const char *respTopic, JsonVariant params) {
   DBGLN("Update triggered");
   if (params.isNull())
     return;

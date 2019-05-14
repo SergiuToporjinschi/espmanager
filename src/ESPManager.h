@@ -52,6 +52,8 @@ class ESPManager {
  public:
   using eventIncomingHandler = std::function<void(const char *)>;
   using outputTimerHandler = std::function<char *(const char *)>;
+  using cmdFunction = std::function<char *(JsonVariant)>;
+
   ESPManager();
   ~ESPManager();
   ESPManConnStatus createConnections(JsonObject wlanConf, JsonObject mqttConf);
@@ -90,6 +92,8 @@ class ESPManager {
   void onWaitingMQTTCon(std::function<void()> func) { this->waitingMQTTCon = func; };
   void onAfterWaitingMQTTCon(std::function<void()> func) { this->afterWaitingMQTTCon = func; };
 
+  void addCommand(const char *cmd, cmdFunction handler);
+
  private:
   const char *version = VER;
   const char *sketchVersion = nullptr;
@@ -110,7 +114,9 @@ class ESPManager {
   MQTTClient mqttCli;   //MQTT client engine
   WiFiMode wifiMode;    //WiFi Engine
 
-  bool sendOfflineStatus; //Sends a retain message for registering stauts
+  bool sendOfflineStatus;         //Sends a retain message for registering stauts
+  const char *cmdTopic = nullptr; //topic for receving commands
+  char cmdTopicResp[100] = {0};   //topic for sending reponse for commands
 
   //binding definition for connecting onMessage from mqtt to local method
   Binding<String &, String &> *cbBind = nullptr;
@@ -123,7 +129,7 @@ class ESPManager {
   };
 
   //Structure for mapping commands to class functions
-  typedef void (ESPManager::*cmdFn)(JsonVariant params);
+  typedef void (ESPManager::*cmdFn)(const char *respTopic, JsonVariant params);
   struct FunctionMap {
     char cmd[20];
     cmdFn func;
@@ -143,6 +149,8 @@ class ESPManager {
     }
   };
 
+  std::map<const char *, cmdFunction, cmp_str> commands;
+
   std::map<const char *, eventIncomingHandler, cmp_str> inputEvents;
   std::map<const char *, outputTimerItem, cmp_str> outputEvents;
 
@@ -160,17 +168,17 @@ class ESPManager {
   // command functions
   void subscribeCMD();
   int findCmd(const char *cmd);
-  void cmdReconnect(JsonVariant params);
-  void cmdConfig(JsonVariant params);
-  void cmdRestart(JsonVariant params);
-  void cmdReset(JsonVariant params);
-  void cmdGetInfo(JsonVariant params);
-  void cmdUpdate(JsonVariant params);
+  void cmdReconnect(const char *respTopic, JsonVariant params);
+  void cmdConfig(const char *respTopic, JsonVariant params);
+  void cmdRestart(const char *respTopic, JsonVariant params);
+  void cmdReset(const char *respTopic, JsonVariant params);
+  void cmdGetInfo(const char *respTopic, JsonVariant params);
+  void cmdUpdate(const char *respTopic, JsonVariant params);
 
+  void readconfiguration();
   void reconnect();
   void messageReceived(String &topic, String &payload);
-  bool executeInteralTopics(const char *topic, const char *payload);
-  bool executeRegisteredTopics(const char *topic, const char *payload);
+  void executeCommands(const char *topic, const char *payload);
   void executeTimingOutputEvents();
 };
 

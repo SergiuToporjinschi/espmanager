@@ -1,24 +1,24 @@
 //=================[ DEBUGER ]=================
-//#define DEBUGER
-#ifndef DEBUGER
-#define DBGLN(x)
-#define DBG(x)
-#else
-#define DBGLN(x) Serial.println(x)
-#define DBG(x) Serial.print(x)
-#endif
 
-//=================[ VERSION ]=================
-#ifndef VER
-#define VER "2.0.3"
+#ifndef DEBUGGER
+#  define DBGLN(x)
+#  define DBG(x)
+#else
+#  define DBGLN(x) Serial.println(x)
+#  define DBG(x) Serial.print(x)
 #endif
 
 //=================[ REVISION ]================
 #ifndef REV
-#define REV "NONE"
+#  define REV (char *)"NONE"
+#endif
+
+//=================[ VERSION ]=================
+#ifndef VER
+#  define VER (char *)"0.0.0"
 #endif
 
 //===================[ MQTT ]==================
 #ifndef MQTT_BUFFER
-#define MQTT_BUFFER 800
+#  define MQTT_BUFFER 800
 #endif

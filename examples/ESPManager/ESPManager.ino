@@ -31,6 +31,11 @@ void onCall(const char *msg);
 SettingsManager conf;
 ESPManager man;
 
+char *onGetConf(JsonVariant params);
+char *onSetConf(JsonVariant params);
+void onCall(const char *msg);
+char *readTemp(const char *msg);
+
 void setup() {
   Serial.begin(115200);
 
@@ -49,7 +54,7 @@ void setup() {
     Serial.println("onBeforeWaitingWiFiCon");
   });
   man.onWaitingWiFiCon([]() {
-    Serial.print("#");
+    Serial.print("-");
   });
   man.onAfterWaitingWiFiCon([]() {
     Serial.println("onAfterWaitingWiFiCon");
@@ -71,8 +76,18 @@ void setup() {
 
   // Add listener on IOT/espTest/inc
   man.addIncomingEventHandler("IOT/espTest/inc", onCall);
+
+  man.addCommand("setConf", onSetConf);
+
+  // Add custom command
+  man.addCommand("getConf", onGetConf);
+
+  // Add listener for changing configuration
+  // man.addIncomingEventHandler("IOT/espTest/getconf", onGetConf);
+
   //Adding timout trigger
   man.addTimerOutputEventHandler("IOT/espTest/out", 2000, readTemp);
+
   //Send instant message on IOT/espTest/out
   man.sendMsg("IOT/espTest/out", "test");
 }
@@ -90,4 +105,27 @@ char *readTemp(const char *msg) {
 
 void onCall(const char *msg) {
   Serial.println(msg);
+};
+/**
+ * Set the entire configuration file,
+ * I'm serializing the conf and set it as root for current settings
+ * A restart in necessary to load the new settings
+ **/
+char *onSetConf(JsonVariant params) {
+  DBGLN("method called");
+  conf.writeSettings("/settings.json", params);
+  return nullptr;
+};
+
+/**
+ * Get the entire configuration file
+ **/
+char *onGetConf(JsonVariant params) {
+  char settings[1024] = {0};
+  JsonObject root = conf.getRoot();
+  serializeJson(root, settings);
+  char *retSettings = (char *)malloc(1000 * sizeof(char));
+  strcpy(retSettings, settings);
+  return retSettings;
+  //man.sendMsg("IOT/espTest/getconf", settings);
 };
