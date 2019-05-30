@@ -38,7 +38,7 @@ static const char UPDATE_SKETCH_P[] PROGMEM = "sketch";
 static const char UPDATE_SPIFFS_P[] PROGMEM = "spiffs";
 
 static const char SKETCH_VERSION_PATTERN_P[] = ",\"sketchVersion\":\"%s\"";
-static const char INFO_PATTERN_P[] PROGMEM = "{\"chipId\":%i,\"localIP\":\"%s\",\"macAddress\":\"%s\",\"lastRestartReson\":\"%s\",\"flashChipId\":%u,\"coreVersion\":\"%s\",\"sdkVersion\":\"%s\",\"vcc\":\"%1.2f V\",\"flashChipSpeed\":\"%u MHz\",\"cycleCount\":%u,\"cpuFreq\":\"%u MHz\", \"freeHeap\":%u,\"flashChipSize\":%u,\"sketchSize\":%u,\"freeSketchSpace\":%u,\"flashChipRealSize\":%u,\"espManagerVersion\":\"%s\"%s}";
+static const char INFO_PATTERN_P[] PROGMEM = "{\"hostName\":\"%s\",\"chipId\":%i,\"localIP\":\"%s\",\"macAddress\":\"%s\",\"lastRestartReson\":\"%s\",\"flashChipId\":%u,\"coreVersion\":\"%s\",\"sdkVersion\":\"%s\",\"vcc\":\"%1.2f V\",\"flashChipSpeed\":\"%u MHz\",\"cycleCount\":%u,\"cpuFreq\":\"%u MHz\", \"freeHeap\":%u,\"flashChipSize\":%u,\"sketchSize\":%u,\"freeSketchSpace\":%u,\"flashChipRealSize\":%u,\"espManagerVersion\":\"%s\"%s}";
 
 enum ESPManConnStatus {
   CONNECTION_OK,
@@ -138,7 +138,7 @@ class ESPManager {
   //Command list key and execution method
   FunctionMap cmdFunctions[5] = {
       {"reconnect", &ESPManager::cmdReconnect},
-      {"restart", &ESPManager::cmdRestart}, //--> currently disabled, it crashes the esp see https://github.com/SergiuToporjinschi/espmanager/issues/3
+      {"restart", &ESPManager::cmdRestart},
       {"reset", &ESPManager::cmdReset},
       {"update", &ESPManager::cmdUpdate},
       {"getInfo", &ESPManager::cmdGetInfo}};
