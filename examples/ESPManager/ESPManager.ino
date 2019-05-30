@@ -1,5 +1,5 @@
 /*
-  ESPManager 2.0.3
+  ESPManager
 
   Copyright (C) 2018 by Sergiu Toporjinschi <sergiu dot toporjinschi at gmail dot com>
 
@@ -21,13 +21,20 @@
 
 */
 
-#include <ArduinoJson.h>
 #include "ESPManager.h"
 #include "SettingsManager.h"
+#include <ArduinoJson.h>
 
-char * readTemp(const char * msg);
+char *readTemp(const char *msg);
+void onCall(const char *msg);
+
 SettingsManager conf;
 ESPManager man;
+
+char *onGetConf(JsonVariant params);
+char *onSetConf(JsonVariant params);
+void onCall(const char *msg);
+char *readTemp(const char *msg);
 
 void setup() {
   Serial.begin(115200);
@@ -47,7 +54,11 @@ void setup() {
     Serial.println("onBeforeWaitingWiFiCon");
   });
   man.onWaitingWiFiCon([]() {
+<<<<<<< HEAD
     Serial.print("#");
+=======
+    Serial.print("-");
+>>>>>>> toPIO
   });
   man.onAfterWaitingWiFiCon([]() {
     Serial.println("onAfterWaitingWiFiCon");
@@ -69,8 +80,18 @@ void setup() {
 
   // Add listener on IOT/espTest/inc
   man.addIncomingEventHandler("IOT/espTest/inc", onCall);
+
+  man.addCommand("setConf", onSetConf);
+
+  // Add custom command
+  man.addCommand("getConf", onGetConf);
+
+  // Add listener for changing configuration
+  // man.addIncomingEventHandler("IOT/espTest/getconf", onGetConf);
+
   //Adding timout trigger
   man.addTimerOutputEventHandler("IOT/espTest/out", 2000, readTemp);
+
   //Send instant message on IOT/espTest/out
   man.sendMsg("IOT/espTest/out", "test");
 }
@@ -79,13 +100,36 @@ void loop() {
   man.loopIt();
 }
 
-char * readTemp(const char * msg) {
+char *readTemp(const char *msg) {
   //Allocate memory, will be freed by manager
-  char * ret = (char *) malloc(25 * sizeof(char));
+  char *ret = (char *)malloc(25 * sizeof(char));
   strcpy(ret, "{temp:39, humidity: 75}");
   return ret;
 };
 
-void onCall(const char * msg) {
+void onCall(const char *msg) {
   Serial.println(msg);
+};
+/**
+ * Set the entire configuration file,
+ * I'm serializing the conf and set it as root for current settings
+ * A restart in necessary to load the new settings
+ **/
+char *onSetConf(JsonVariant params) {
+  DBGLN("method called");
+  conf.writeSettings("/settings.json", params);
+  return nullptr;
+};
+
+/**
+ * Get the entire configuration file
+ **/
+char *onGetConf(JsonVariant params) {
+  char settings[1024] = {0};
+  JsonObject root = conf.getRoot();
+  serializeJson(root, settings);
+  char *retSettings = (char *)malloc(1000 * sizeof(char));
+  strcpy(retSettings, settings);
+  return retSettings;
+  //man.sendMsg("IOT/espTest/getconf", settings);
 };

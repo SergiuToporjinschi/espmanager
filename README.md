@@ -20,10 +20,10 @@ ESPManager();
 `
  * Initialize WiFi;
  * Initialize MQTT;
-  
+
 ## **createConnections**
 ```cpp
-createConnections(<JsonObject wlanConf>, <JsonObject mqttConf>); 
+createConnections(<JsonObject wlanConf>, <JsonObject mqttConf>);
 ```
  * Creates connection on WiFi;
  * Creates connection on MQTT;
@@ -55,7 +55,7 @@ Register a function to be executed on a time interval. The result of function `e
  * **executeFn** a function which returns the (const char *) that will be sent over MQTT;
 
 
-```cpp 
+```cpp
 executeFn<char *(const char * topic)>
 ```
  * **topic** MQTT topic where the return value will be send;
@@ -74,6 +74,17 @@ Creates a listener on a specific MQTT topic and will execute the `onCall` when s
 onCall<void(const char * msg)>
 ```
 
+## **addCommand**
+```cpp
+addCommand(<const [string] | [const char *] cmd>, <function cmdFunction>)
+```
+Register a function for a command; when the command is received the function will will be triggered with the parameters object that is coming with the command;
+
+```cpp
+function<char *(JsonVariant)>
+```
+ * **JsonVariant** of configuration recevied as 'params' in command;
+
 ## **sendMsg**
 ```cpp
 sendMsg(<const [string] | [const char *] mqttTopic>, <const [string] | [const char *] msg>)
@@ -86,18 +97,18 @@ On calling Sends the `msg` on `mqttTopic`;
 ## **Configuration example:**
 ```json
 {
-  "wlan":{                                
+  "wlan":{
     "hostName":"espTest",
     "ssid":"mySSid",
     "password":"myPassword"
   },
-  "mqtt":{                               
+  "mqtt":{
     "clientId":"espCID",
     "server":"192.168.1.1",
     "port":"1888",
     "user":"mqttTestUser",
     "password":"mqttTestUser",
-    "sendOfflineStatus":true,             
+    "sendOfflineStatus":true,
     "retainMessage": true,
     "qos": 0,
     "topics":{
@@ -130,7 +141,7 @@ void setup() {
   //Splitting settings in wlanConf and MqttConf
   JsonObject wlanConf = conf.getJsonObject("wlan");
   JsonObject mqttConf = conf.getJsonObject("mqtt");
-  //Setting scketch ino verion 
+  //Setting scketch ino verion
   man.setSketchVersion("1.0.0");
   //Creating connection to wlan and mqtt
   man.createConnections(wlanConf, mqttConf);
@@ -166,25 +177,25 @@ void onCall(const char * msg) {
 ```
 Will return json with following info in topic `configurationJSON.mqtt.topics.cmd + '/resp'`
 ```json
-{  
-  "chipId": 5078804,                     
-  "localIP": "192.168.100.17",           
-  "macAddress": "2C:3A:E8:4D:7F:14",     
-  "lastRestartReson": "External System", 
-  "flashChipId": 1323036,                
-  "coreVersion": "2.5.0",                
-  "sdkVersion": "3.0.0-dev(c0f7b44)",    
-  "vcc": "3.38 V",                       
-  "flashChipSpeed":"40 MHz",             
-  "cycleCount": 3554582419,             
-  "cpuFreq": "80 MHz",                   
-  "freeHeap": 44768,                     
-  "flashChipSize": 1048576,              
-  "sketchSize": 339056,                  
-  "freeSketchSpace": 622592,            
-  "flashChipRealSize": 1048576,          
-  "espManagerVersion": "2.0.0",          
-  "sketchVersion": "1.0"                 
+{
+  "chipId": 5078804,
+  "localIP": "192.168.100.17",
+  "macAddress": "2C:3A:E8:4D:7F:14",
+  "lastRestartReson": "External System",
+  "flashChipId": 1323036,
+  "coreVersion": "2.5.0",
+  "sdkVersion": "3.0.0-dev(c0f7b44)",
+  "vcc": "3.38 V",
+  "flashChipSpeed":"40 MHz",
+  "cycleCount": 3554582419,
+  "cpuFreq": "80 MHz",
+  "freeHeap": 44768,
+  "flashChipSize": 1048576,
+  "sketchSize": 339056,
+  "freeSketchSpace": 622592,
+  "flashChipRealSize": 1048576,
+  "espManagerVersion": "2.0.0",
+  "sketchVersion": "1.0"
 }
 ```
 #### **Ask for a reset**
@@ -200,11 +211,11 @@ Will return json with following info in topic `configurationJSON.mqtt.topics.cmd
 #### **Update over the air**
 ```json
 {
-  "cmd":"update",                              
-  "params":{                                   
-    "type":"sketch",                      
-    "version":"4.0",                          
-    "url":"http://myServer.com/api/url/update" 
+  "cmd":"update",
+  "params":{
+    "type":"sketch",
+    "version":"4.0",
+    "url":"http://myServer.com/api/url/update"
   }
 }
 ```
