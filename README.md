@@ -177,25 +177,30 @@ void onCall(const char * msg) {
 ```
 Will return json with following info in topic `configurationJSON.mqtt.topics.cmd + '/resp'`
 ```json
-{
-  "chipId": 5078804,
-  "localIP": "192.168.100.17",
-  "macAddress": "2C:3A:E8:4D:7F:14",
-  "lastRestartReson": "External System",
-  "flashChipId": 1323036,
-  "coreVersion": "2.5.0",
-  "sdkVersion": "3.0.0-dev(c0f7b44)",
-  "vcc": "3.38 V",
-  "flashChipSpeed":"40 MHz",
-  "cycleCount": 3554582419,
-  "cpuFreq": "80 MHz",
-  "freeHeap": 44768,
-  "flashChipSize": 1048576,
-  "sketchSize": 339056,
-  "freeSketchSpace": 622592,
-  "flashChipRealSize": 1048576,
-  "espManagerVersion": "2.0.0",
-  "sketchVersion": "1.0"
+{  
+   "hostName": "nodePlants",
+   "chipId": 8963427,
+   "localIP": "192.168.1.101",
+   "macAddress": "68:C6:3A:88:C5:63",
+   "RSSI": -63,  //Signal strength in dBm
+   "lastRestartReson": "External System",
+   "flashChipId": 1458208,
+   "coreVersion": "2.5.2",
+   "sdkVersion": "2.2.1(cfd48f3)",
+   "vcc": 2.96,  //power in V
+   "flashChipSpeed": 40, //MHz
+   "cycleCount": 948668853,
+   "cpuFreq": 80, //MHz
+   "freeHeap": 44664, //Bytes
+   "heapFrag": 1, //Heap fragmentation in %
+   "maxFreeBlockSize": 44512, //Maximum free space that could be allocated in one block (Bytes)
+   "flashChipSize": 4194304, //Bytes
+   "sketchSize": 345888, //Bytes
+   "freeSketchSpace": 2797568, //Bytes
+   "flashChipRealSize": 4194304, //Bytes
+   "espManagerVersion": "1.0.0",
+   "sketchVersion": "1.0.0",
+   "sketchMD5": "a4bf983f66d52ce63d1c186c27fdb6ad"
 }
 ```
 #### **Ask for a reset**
