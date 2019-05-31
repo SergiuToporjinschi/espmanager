@@ -450,13 +450,13 @@ void ESPManager::cmdGetInfo(const char *respTopic, JsonVariant params) {
   String coreVersion = ESP.getCoreVersion();
   coreVersion.replace("_", ".");
 
-  char skVerBuf[30] = {0};
+  char skVerBuf[90] = {0};
   if (sketchVersion != nullptr) {
-    snprintf_P(skVerBuf, 30, SKETCH_VERSION_PATTERN_P, sketchVersion);
+    snprintf_P(skVerBuf, 90, SKETCH_VERSION_PATTERN_P, sketchVersion, ESP.getSketchMD5().c_str());
   }
 
-  char retVal[510] = {0};
-  snprintf_P(retVal, 510, INFO_PATTERN_P, WiFi.hostname().c_str(), ESP.getChipId(), WiFi.localIP().toString().c_str(), String(WiFi.macAddress()).c_str(), WiFi.RSSI(), ESP.getResetReason().c_str(), ESP.getFlashChipId(), coreVersion.c_str(),
+  char retVal[600] = {0};
+  snprintf_P(retVal, 600, INFO_PATTERN_P, WiFi.hostname().c_str(), ESP.getChipId(), WiFi.localIP().toString().c_str(), String(WiFi.macAddress()).c_str(), WiFi.RSSI(), ESP.getResetReason().c_str(), ESP.getFlashChipId(), coreVersion.c_str(),
              ESP.getSdkVersion(), ESP.getVcc() / 1024.00f, ESP.getFlashChipSpeed() / 1000000, ESP.getCycleCount(), ESP.getCpuFreqMHz(), ESP.getFreeHeap(), ESP.getFlashChipSize(), ESP.getSketchSize(),
              ESP.getFreeSketchSpace(), ESP.getFlashChipRealSize(), version, skVerBuf);
 
