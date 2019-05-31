@@ -54,11 +54,7 @@ void setup() {
     Serial.println("onBeforeWaitingWiFiCon");
   });
   man.onWaitingWiFiCon([]() {
-<<<<<<< HEAD
-    Serial.print("#");
-=======
     Serial.print("-");
->>>>>>> toPIO
   });
   man.onAfterWaitingWiFiCon([]() {
     Serial.println("onAfterWaitingWiFiCon");
