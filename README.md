@@ -176,7 +176,7 @@ void onCall(const char * msg) {
 { "cmd":"getInfo" }
 ```
 Will return json with following info in topic `configurationJSON.mqtt.topics.cmd + '/resp'`
-```json
+```js
 {  
    "hostName": "nodePlants",
    "chipId": 8963427,
