@@ -385,7 +385,7 @@ void ESPManager::addIncomingEventHandler(const char *topic, eventIncomingHandler
   mqttCli.subscribe(topic, qos);
 };
 
-void ESPManager::addTimerOutputEventHandler(const char * topic, long loopTime, outputTimerHandler handler) {
+void ESPManager::addTimerOutputEventHandler(const char *topic, unsigned long loopTime, outputTimerHandler handler) {
   outputEvents[topic] = {handler, loopTime, 0};
 }
 
