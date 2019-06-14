@@ -108,11 +108,11 @@ class ESPManager {
   std::function<void()> waitingMQTTCon;
   std::function<void()> afterWaitingMQTTCon;
 
-  WiFiClient net;
-  JsonObject _wlanConf; //WLAN settings
-  JsonObject _mqttConf; //MQTT settings
-  MQTTClient mqttCli;   //MQTT client engine
-  WiFiMode wifiMode;    //WiFi Engine
+  WiFiClient mqttNetClient; //TCP client for MQTT
+  JsonObject _wlanConf;     //WLAN settings
+  JsonObject _mqttConf;     //MQTT settings
+  MQTTClient mqttCli;       //MQTT client engine
+  WiFiMode wifiMode;        //WiFi Engine
 
   bool sendOfflineStatus;         //Sends a retain message for registering stauts
   const char *cmdTopic = nullptr; //topic for receving commands

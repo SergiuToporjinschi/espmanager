@@ -154,7 +154,8 @@ void ESPManager::setupMQTT() {
   DBG(mqttServer);
   DBG("; port: ");
   DBGLN(mqttPort);
-  mqttCli.begin(mqttServer, mqttPort, net);
+
+  mqttCli.begin(mqttServer, mqttPort, mqttNetClient);
 
   mqttCli.onMessage(cbBind->callback); //TODO de implementat
 
@@ -470,8 +471,8 @@ void ESPManager::cmdUpdate(const char *respTopic, JsonVariant params) {
     return;
 
   const char *type = params[F("type")].as<const char *>();
-  const char *ver = params[F("version")].as<const char *>();
-  const char *url = params[F("url")].as<const char *>();
+  String ver = params[F("version")].as<String>();
+  String url = params[F("url")].as<String>();
 
   DBG("type: ");
   DBGLN(type);
@@ -480,14 +481,17 @@ void ESPManager::cmdUpdate(const char *respTopic, JsonVariant params) {
   DBG("url: ");
   DBGLN(url);
 
+  ESPhttpUpdate.rebootOnUpdate(true);
   ESPhttpUpdate.setLedPin(LED_BUILTIN, HIGH);
   t_httpUpdate_return ret = HTTP_UPDATE_OK;
   if (strcmp_P(type, UPDATE_SKETCH_P) == 0) {
     DBGLN("updateTYPE");
-    ret = ESPhttpUpdate.update(net, url, ver);
+    WiFiClient updateNetCli;
+    ret = ESPhttpUpdate.update(updateNetCli, url, ver);
   } else if (strcmp_P(type, UPDATE_SPIFFS_P) == 0) {
     DBGLN("updateSPIFFS");
-    ret = ESPhttpUpdate.updateSpiffs(net, url, ver);
+    WiFiClient updateNetCli;
+    ret = ESPhttpUpdate.updateSpiffs(updateNetCli, url, ver);
   }
   switch (ret) {
   case HTTP_UPDATE_FAILED:
