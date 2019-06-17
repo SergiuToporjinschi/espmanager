@@ -49,7 +49,7 @@ ESPManConnStatus ESPManager::createConnections(JsonObject wlanConf, JsonObject m
   _mqttConf = mqttConf;
   readconfiguration();
 
-  // createConnections();
+  createConnections();
   return CONNECTION_OK;
 }
 
