@@ -14,6 +14,15 @@ Dependencies:
 * [ESP8266httpUpdate](https://github.com/esp8266/Arduino/tree/master/libraries/ESP8266httpUpdate)
 
 For details using SettingsManager please see the [read.me](https://github.com/SergiuToporjinschi/settingsmanager) file.
+## Compile macro flags
+ >**EM_UDP_DEBUG** - For sending aditional information via UDP, you configure ip and port in your configuration file under the wlan object;
+```json
+"debugUDP": {
+  "enabled": true,
+  "server": "192.168.1.1",
+  "port": "4321"
+}
+```
 ## Constructor
 `
 ESPManager();

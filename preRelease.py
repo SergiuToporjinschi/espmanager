@@ -1,9 +1,14 @@
-from platformio import util
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 import glob, shutil, os, sys
+
 print '########### Run release script ###########'
+Import("env")
 
-config = util.load_project_config()
-
+config = configparser.ConfigParser()
+config.read("platformio.ini")
 
 exampleFolder = config.get("common", "examples_folder")
 version = config.get("common", "version").replace("\"","")

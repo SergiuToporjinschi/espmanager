@@ -2,7 +2,12 @@
   "wlan": {
     "hostName": "espTest",
     "ssid": "mySSid",
-    "password": "myPassword"
+    "password": "myPassword",
+    "debugUDP": {
+      "enabled": true,
+      "server": "192.168.1.6",
+      "port": "4321"
+    }
   },
   "mqtt": {
     "clientId": "espCID",

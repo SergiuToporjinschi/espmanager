@@ -30,6 +30,12 @@
 #include <pgmspace.h>
 #include <stdlib.h>
 
+#ifdef EM_UDP_DEBUG
+#  include <WiFiUdp.h>
+
+static const char DEUBG_UDP_MASK_P[] PROGMEM = "{\"Exception\":%d,\"flag\":%d,\"flagText\":\"%s\",\"epc1\":\"0x%08x\",\"epc2\":\"0x%08x\",\"epc3\":\"0x%08x\",\"excvaddr\":\"0x%08x\",\"depc\":\"0x%08x\"}";
+#endif
+
 static const char STATUS_FORMAT_P[] PROGMEM = "{\"name\":\"%s\", \"status\":\"%s\"}";
 static const char STATUS_ONLINE_P[] PROGMEM = "online";
 static const char STATUS_OFFLINE_P[] PROGMEM = "offline";
@@ -100,6 +106,12 @@ class ESPManager {
   bool retainMsg = false;
   int qos = 0;
 
+#ifdef EM_UDP_DEBUG
+  WiFiUDP Udp;
+  IPAddress udpDebugIP;
+  uint16_t udpDebugPort;
+#endif
+
   std::function<void()> beforeWaitingWiFiCon;
   std::function<void()> waitingWiFiCon;
   std::function<void()> afterWaitingWiFiCon;
@@ -157,6 +169,11 @@ class ESPManager {
 
   //conectivity functions
   void createConnections();
+
+#ifdef EM_UDP_DEBUG
+  void initDebugUDP();
+#endif
+
   void connectToWifi();
   void waitForWiFi();
   void debugWiFiStatus();

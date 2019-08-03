@@ -100,6 +100,9 @@ void ESPManager::connectToWifi() {
   delay(100);
   WiFi.begin(_wlanConf.getMember(F("ssid")).as<char *>(), _wlanConf.getMember(F("password")).as<char *>());
   waitForWiFi();
+#ifdef EM_UDP_DEBUG
+  initDebugUDP();
+#endif
 }
 
 /**
@@ -131,6 +134,34 @@ void ESPManager::waitForWiFi() {
   DBG("IP: ");
   DBGLN(WiFi.localIP().toString());
 }
+
+#ifdef EM_UDP_DEBUG
+void ESPManager::initDebugUDP() {
+  DBGLN("UDP DEBUG:");
+  JsonVariant debugUdp = _wlanConf.getMember(F("debugUDP"));
+  if (WiFi.status() == WL_CONNECTED &&
+      !debugUdp.isNull() &&
+      !debugUdp.getMember(F("enabled")).isNull() &&
+      debugUdp.getMember(F("enabled")).as<boolean>() &&
+      !debugUdp.getMember(F("server")).isNull() &&
+      !debugUdp.getMember(F("port")).isNull()) {
+
+    udpDebugIP.fromString(debugUdp.getMember(F("server")).as<char *>());
+    udpDebugPort = debugUdp.getMember(F("port")).as<unsigned short>();
+    DBG("port:");
+    DBGLN(udpDebugPort);
+    DBG("ip:");
+    DBGLN(udpDebugIP.toString());
+    rst_info *resetInfo = ESP.getResetInfoPtr();
+    char buff[200] = {0};
+    sprintf_P(&buff[0], DEUBG_UDP_MASK_P, resetInfo->exccause, resetInfo->reason, (resetInfo->reason == 0 ? "DEFAULT" : resetInfo->reason == 1 ? "WDT" : resetInfo->reason == 2 ? "EXCEPTION" : resetInfo->reason == 3 ? "SOFT_WDT" : resetInfo->reason == 4 ? "SOFT_RESTART" : resetInfo->reason == 5 ? "DEEP_SLEEP_AWAKE" : resetInfo->reason == 6 ? "EXT_SYS_RST" : "???"), resetInfo->epc1, resetInfo->epc2, resetInfo->epc3, resetInfo->excvaddr, resetInfo->depc);
+    if (Udp.beginPacket(udpDebugIP, udpDebugPort)) {
+      Udp.write(buff);
+      Udp.endPacket();
+    }
+  }
+}
+#endif
 
 /**
    Is printing connection status to WiFi if is not connected;
