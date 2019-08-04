@@ -5,7 +5,6 @@ except ImportError:
 import glob, shutil, os, sys
 
 print '########### Run release script ###########'
-Import("env")
 
 config = configparser.ConfigParser()
 config.read("platformio.ini")
