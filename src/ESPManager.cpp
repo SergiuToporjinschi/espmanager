@@ -353,6 +353,8 @@ void ESPManager::messageReceived(String &topic, String &payload) {
     inputEvents[topic.c_str()](payload.c_str());
   } else {
     DBGLN("messageReceived: No method found");
+    DBG("topic: ");DBGLN(topic);
+    DBG("payload: ");DBGLN(payload);
   }
 }
 
