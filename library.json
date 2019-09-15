@@ -7,7 +7,7 @@
     },
     "keywords": "ESP, ESP8266, IOT, WIFI, OTA",
     "Authors": "Sergiu Toporjinschi",
-    "version": "2.0.3",
+    "version": "3.1.1",
     "frameworks": "*",
     "platforms": "espressif8266",
     "dependencies": {
