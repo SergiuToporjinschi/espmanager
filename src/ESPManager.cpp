@@ -18,6 +18,16 @@
 
 */
 #include "ESPManager.h"
+
+//=================[ DEBUG_ESPMANAGER ]================
+#ifdef DEBUG_ESPMANAGER
+#  define DBG(x) debug->print(x)
+#  define DBGLN(x) debug->println(x)
+#else
+#  define DBG(X)
+#  define DBGLN(X)
+#endif // DEBUG_ESPMANAGER
+//=================[ DEBUG_ESPMANAGER ]================
 ADC_MODE(ADC_VCC);
 
 ESPManager::ESPManager() {
@@ -180,7 +190,6 @@ void ESPManager::debugWiFiStatus() {
 void ESPManager::setupMQTT() {
   const char *mqttServer = _mqttConf.getMember(F("server")).as<const char *>();
   int mqttPort = _mqttConf.getMember(F("port")).as<int>();
-
   DBG("Setting MQTT: ");
   DBG(mqttServer);
   DBG("; port: ");
@@ -326,13 +335,13 @@ void ESPManager::executeTimingOutputEvents() {
       char *output = outputEvents[key].handler(key);
       outputEvents[key].lastTime = millis();
       if (output != nullptr && strlen(output) > 0) {
-        DBG("publishing to topic: ");
-        DBG(key);
-        DBG(" time:");
-        DBG(outputEvents[key].timing);
-        DBG("; output: ");
-        DBGLN(output);
         mqttCli.publish(key, output, false, qos);
+        // DBG("publishing to topic: ");
+        // DBG(key);
+        // DBG(" time:");
+        // DBG(outputEvents[key].timing);
+        // DBG("; output: ");
+        // DBGLN(output);
       }
       free(output);
     }
@@ -532,7 +541,6 @@ void ESPManager::cmdUpdate(const char *respTopic, JsonVariant params) {
     DBG(ESPhttpUpdate.getLastError());
     DBG(" - ");
     DBGLN(ESPhttpUpdate.getLastErrorString());
-    DBGLN();
     break;
 
   case HTTP_UPDATE_NO_UPDATES:
@@ -550,6 +558,12 @@ void ESPManager::cmdUpdate(const char *respTopic, JsonVariant params) {
   }
 }
 // ---==[ END Commands ]==---
+
+#ifdef DEBUG_ESPMANAGER
+void ESPManager::setDebugger(Print *print) {
+  debug = print;
+}
+#endif //DEBUG_ESPMANAGER
 
 ESPManager::~ESPManager() {
   //  delete cbBind;

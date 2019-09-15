@@ -100,12 +100,18 @@ class ESPManager {
 
   void addCommand(const char *cmd, cmdFunction handler);
 
+#ifdef DEBUG_ESPMANAGER
+  void setDebugger(Print *print);
+#endif //DEBUG_ESPMANAGER
+
  private:
   const char *version = VER;
   const char *sketchVersion = nullptr;
   bool retainMsg = false;
   int qos = 0;
-
+#ifdef DEBUG_ESPMANAGER
+  Print *debug = &Serial;
+#endif //DEBUG_ESPMANAGER
 #ifdef EM_UDP_DEBUG
   WiFiUDP Udp;
   IPAddress udpDebugIP;

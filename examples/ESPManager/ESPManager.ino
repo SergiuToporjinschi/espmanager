@@ -20,11 +20,9 @@
   Set values from wlan and mqtt
 
 */
-
 #include "ESPManager.h"
 #include "SettingsManager.h"
 #include <ArduinoJson.h>
-
 char *readTemp(const char *msg);
 void onCall(const char *msg);
 
@@ -38,6 +36,14 @@ char *readTemp(const char *msg);
 
 void setup() {
   Serial.begin(115200);
+#if defined(DEBUG_SETTINGS) || defined(DEBUG_ESPMANAGER)
+#  ifdef DEBUG_SETTINGS
+  conf.setDebugger(&Serial);
+#  endif
+#  ifdef DEBUG_ESPMANAGER
+  man.setDebugger(&Serial);
+#  endif
+#endif
 
   //Reading configuration from json file
   conf.readSettings("/settings.json");
@@ -54,7 +60,7 @@ void setup() {
     Serial.println("onBeforeWaitingWiFiCon");
   });
   man.onWaitingWiFiCon([]() {
-    Serial.print("-");
+    Serial.print("#");
   });
   man.onAfterWaitingWiFiCon([]() {
     Serial.println("onAfterWaitingWiFiCon");
@@ -90,6 +96,7 @@ void setup() {
 
   //Send instant message on IOT/espTest/out
   man.sendMsg("IOT/espTest/out", "test");
+  Serial.println("SetupFinish");
 }
 
 void loop() {
@@ -106,13 +113,13 @@ char *readTemp(const char *msg) {
 void onCall(const char *msg) {
   Serial.println(msg);
 };
+
 /**
  * Set the entire configuration file,
  * I'm serializing the conf and set it as root for current settings
  * A restart in necessary to load the new settings
  **/
 char *onSetConf(JsonVariant params) {
-  DBGLN("method called");
   conf.writeSettings("/settings.json", params);
   return nullptr;
 };
