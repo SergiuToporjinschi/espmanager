@@ -21,13 +21,20 @@
 
 //=================[ DEBUG_ESPMANAGER ]================
 #ifdef DEBUG_ESPMANAGER
-#  define DBG(x) debug->print(x)
-#  define DBGLN(x) debug->println(x)
+#  define DBG(x)           \
+    this->debug->print(x); \
+    this->debug->flush();
+#  define DBGLN(x, ...)                                    \
+    this->debug->printf("[%s](%d): ", __FILE__, __LINE__); \
+    this->debug->printf(x, ##__VA_ARGS__);                 \
+    this->debug->println("");                              \
+    this->debug->flush();
 #else
 #  define DBG(X)
-#  define DBGLN(X)
+#  define DBGLN(X, ...)
 #endif // DEBUG_ESPMANAGER
 //=================[ DEBUG_ESPMANAGER ]================
+
 ADC_MODE(ADC_VCC);
 
 ESPManager::ESPManager() {
@@ -99,12 +106,11 @@ void ESPManager::createConnections() {
 */
 void ESPManager::connectToWifi() {
   DBGLN("Connecting WiFi...");
+  debugWiFiStatus();
   if (WiFi.status() == WL_CONNECTED) {
-    DBG("Is already connected: ");
-    DBGLN(WiFi.status());
+    DBGLN("Is already connected: %i", WiFi.status());
     return;
   }
-  debugWiFiStatus();
   WiFi.mode(wifiMode);
   WiFi.hostname(_wlanConf.getMember(F("hostName")).as<char *>());
   delay(100);
@@ -136,13 +142,12 @@ void ESPManager::waitForWiFi() {
     DBGLN("hasAfter");
     this->afterWaitingWiFiCon();
   }
-  DBGLN("");
+  //  DBGLN("");
   if (WiFi.status() != WL_CONNECTED) {
     debugWiFiStatus();
     ESP.restart();
   }
-  DBG("IP: ");
-  DBGLN(WiFi.localIP().toString());
+  DBGLN("IP: %s", WiFi.localIP().toString().c_str());
 }
 
 #ifdef EM_UDP_DEBUG
@@ -158,10 +163,8 @@ void ESPManager::initDebugUDP() {
 
     udpDebugIP.fromString(debugUdp.getMember(F("server")).as<char *>());
     udpDebugPort = debugUdp.getMember(F("port")).as<unsigned short>();
-    DBG("port:");
-    DBGLN(udpDebugPort);
-    DBG("ip:");
-    DBGLN(udpDebugIP.toString());
+    DBGLN("port: %i", udpDebugPort);
+    DBGLN("ip: %s", udpDebugIP.toString().c_str());
     rst_info *resetInfo = ESP.getResetInfoPtr();
     char buff[200] = {0};
     sprintf_P(&buff[0], DEUBG_UDP_MASK_P, resetInfo->exccause, resetInfo->reason, (resetInfo->reason == 0 ? "DEFAULT" : resetInfo->reason == 1 ? "WDT" : resetInfo->reason == 2 ? "EXCEPTION" : resetInfo->reason == 3 ? "SOFT_WDT" : resetInfo->reason == 4 ? "SOFT_RESTART" : resetInfo->reason == 5 ? "DEEP_SLEEP_AWAKE" : resetInfo->reason == 6 ? "EXT_SYS_RST" : "???"), resetInfo->epc1, resetInfo->epc2, resetInfo->epc3, resetInfo->excvaddr, resetInfo->depc);
@@ -177,11 +180,10 @@ void ESPManager::initDebugUDP() {
    Is printing connection status to WiFi if is not connected;
 */
 void ESPManager::debugWiFiStatus() {
+#ifdef DEBUG_ESPMANAGER
   int wiFiStatus = WiFi.status();
-  if (wiFiStatus != WL_CONNECTED) {
-    DBG("WiFi status: ");
-    DBGLN(wiFiStatus);
-  }
+  DBGLN("WiFi status: %i, %s", wiFiStatus, wiFiStatus == WL_CONNECTED ? " CONNECTED" : (wiFiStatus == WL_CONNECT_FAILED ? " FAILED" : (wiFiStatus == WL_DISCONNECTED ? " DISCONNECTED" : (wiFiStatus == WL_CONNECTION_LOST ? " CONNECTION_LOST " : ""))));
+#endif
 }
 
 /**
@@ -190,21 +192,16 @@ void ESPManager::debugWiFiStatus() {
 void ESPManager::setupMQTT() {
   const char *mqttServer = _mqttConf.getMember(F("server")).as<const char *>();
   int mqttPort = _mqttConf.getMember(F("port")).as<int>();
-  DBG("Setting MQTT: ");
-  DBG(mqttServer);
-  DBG("; port: ");
-  DBGLN(mqttPort);
+  DBGLN("Setting MQTT: %s; port: %i ", mqttServer, mqttPort);
 
   mqttCli.begin(mqttServer, mqttPort, mqttNetClient);
 
   mqttCli.onMessage(cbBind->callback); //TODO de implementat
 
-  DBG("SendOfflineStatus: ");
-  DBGLN(sendOfflineStatus);
+  DBGLN("SendOfflineStatus: %s", sendOfflineStatus ? "true" : "false");
   if (sendOfflineStatus) {
     setOfflineStatusMessage();
   }
-
   DBGLN("Finish setupMQTT");
 }
 
@@ -217,10 +214,7 @@ void ESPManager::setOfflineStatusMessage() {
 
   snprintf_P(msg, 99, STATUS_FORMAT_P, _wlanConf.getMember(F("hostName")).as<char *>(), STATUS_OFFLINE_P);
 
-  DBG("Setting offline message on topic: ");
-  DBG(topicStatus);
-  DBGLN(" content: ");
-  DBGLN(msg);
+  DBGLN("Setting offline message on topic: %s;  content: %s", topicStatus, msg);
 
   mqttCli.clearWill();
   mqttCli.setWill(topicStatus, msg, true, 2);
@@ -235,11 +229,7 @@ void ESPManager::setOnlineStatusMessage() {
 
   snprintf(msg, 99, STATUS_FORMAT_P, _wlanConf.getMember(F("hostName")).as<char *>(), STATUS_ONLINE_P);
 
-  DBG("Setting offline message on topic: ");
-  DBG(topicStatus);
-  DBGLN(" content: ");
-  DBGLN(msg);
-
+  DBGLN("Setting offline message on topic: %s; content: %s", topicStatus, msg);
   mqttCli.publish(topicStatus, msg, true, 2);
 }
 
@@ -258,12 +248,7 @@ void ESPManager::connectToMQTT() {
   const char *user = _mqttConf.getMember(F("user")).as<const char *>();
   const char *password = _mqttConf.getMember(F("password")).as<const char *>();
 
-  DBG("Client: ");
-  DBG(clientId);
-  DBG("; User: ");
-  DBG(user);
-  DBG("; Password: ");
-  DBGLN(password);
+  DBGLN("Client: %s; User: %s; Password: %s ", clientId, user, password);
   if (this->beforeWaitingMQTTCon != nullptr) {
     this->beforeWaitingMQTTCon();
   }
@@ -277,8 +262,7 @@ void ESPManager::connectToMQTT() {
   if (this->afterWaitingMQTTCon != nullptr) {
     this->afterWaitingMQTTCon();
   }
-  DBGLN("");
-  DBGLN("Connected!");
+  DBGLN("MQTT connected!");
 }
 
 /**
@@ -336,6 +320,7 @@ void ESPManager::executeTimingOutputEvents() {
       outputEvents[key].lastTime = millis();
       if (output != nullptr && strlen(output) > 0) {
         mqttCli.publish(key, output, false, qos);
+
         // DBG("publishing to topic: ");
         // DBG(key);
         // DBG(" time:");
@@ -361,9 +346,7 @@ void ESPManager::messageReceived(String &topic, String &payload) {
   } else if (inputEvents.find(topic.c_str()) != inputEvents.end()) {
     inputEvents[topic.c_str()](payload.c_str());
   } else {
-    DBGLN("messageReceived: No method found");
-    DBG("topic: ");DBGLN(topic);
-    DBG("payload: ");DBGLN(payload);
+    DBGLN("messageReceived: No method found ===>>> topic: %s; payload: %s", topic.c_str(), payload.c_str());
   }
 }
 
@@ -377,27 +360,23 @@ int ESPManager::findCmd(const char *cmd) {
 }
 
 void ESPManager::executeCommands(const char *topic, const char *payload) {
-  DBGLN("Executing CMD");
-  DBGLN(payload);
+  DBGLN("Executing CMD: %s", payload);
   StaticJsonDocument<1500> payloadDoc;
   DeserializationError err = deserializeJson(payloadDoc, payload);
   if (err) {
-    DBG("Could not deserialie json:");
-    DBGLN(err.c_str());
+    DBGLN("Could not deserialie json: %s", err.c_str());
     payloadDoc.clear();
     return;
   }
 
   const char *cmd = payloadDoc[F("cmd")].as<JsonVariant>().as<char *>();
   JsonVariant params = payloadDoc[F("params")].as<JsonVariant>();
-  DBG("CMD:");
-  DBGLN(cmd);
+  DBGLN("CMD: %s", cmd);
   // look in registered commands
   if (!commands.empty() && commands.find(cmd) != commands.end()) {
     char *output = commands[cmd](params);
     if (output != nullptr) {
-      DBG("Response to: ");
-      DBGLN(cmdTopicResp);
+      DBGLN("Response to: %s", cmdTopicResp);
       mqttCli.publish(cmdTopicResp, output, false, qos);
     }
     free(output);
@@ -422,8 +401,7 @@ void ESPManager::addIncomingEventHandler(const char *topic, eventIncomingHandler
 #endif
   if (topic == nullptr || strlen(topic) <= 0)
     return;
-  DBG("addIncomingEventHandler: ");
-  DBGLN(topic);
+  DBGLN("addIncomingEventHandler: %s", topic);
   inputEvents[topic] = handler;
   mqttCli.subscribe(topic, qos);
 };
@@ -516,12 +494,7 @@ void ESPManager::cmdUpdate(const char *respTopic, JsonVariant params) {
   String ver = params[F("version")].as<String>();
   String url = params[F("url")].as<String>();
 
-  DBG("type: ");
-  DBGLN(type);
-  DBG("ver: ");
-  DBGLN(ver);
-  DBG("url: ");
-  DBGLN(url);
+  DBGLN("type: %s, ver: %s, url: %s", type, ver.c_str(), url.c_str());
 
   ESPhttpUpdate.rebootOnUpdate(true);
   ESPhttpUpdate.setLedPin(LED_BUILTIN, HIGH);
@@ -537,10 +510,7 @@ void ESPManager::cmdUpdate(const char *respTopic, JsonVariant params) {
   }
   switch (ret) {
   case HTTP_UPDATE_FAILED:
-    DBG("HTTP_UPDATE_FAILD Error: ");
-    DBG(ESPhttpUpdate.getLastError());
-    DBG(" - ");
-    DBGLN(ESPhttpUpdate.getLastErrorString());
+    DBGLN("HTTP_UPDATE_FAILD Error: %i - %s", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
     break;
 
   case HTTP_UPDATE_NO_UPDATES:
