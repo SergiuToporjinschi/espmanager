@@ -1,12 +1,12 @@
-/*
-  ESPManager
+/* 
+
+  espManager
 
   Copyright (C) 2018 by Sergiu Toporjinschi <sergiu dot toporjinschi at gmail dot com>
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation, either version 3 of the License, or
-  (at your option) any later version.
+  the Free Software Foundation version 3.
 
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -14,15 +14,23 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  along with this program. If not, see <https://spdx.org/licenses/GPL-3.0-only.html>.
 
-  Ctrl+k > open data folder, edit settings.json from data folder
-  Set values from wlan and mqtt
+  All rights reserved
 
 */
+
+#ifdef DEBUGGER
+#  include "debug_macro.h"
+Print *dbg = &Serial;
+#endif
+
 #include "ESPManager.h"
 #include "SettingsManager.h"
+#include "SoftwareSerial.h"
+#include <Arduino.h>
 #include <ArduinoJson.h>
+
 char *readTemp(const char *msg);
 void onCall(const char *msg);
 
@@ -36,13 +44,9 @@ char *readTemp(const char *msg);
 
 void setup() {
   Serial.begin(115200);
-#if defined(DEBUG_SETTINGS) || defined(DEBUG_ESPMANAGER)
-#  ifdef DEBUG_SETTINGS
-  conf.setDebugger(&Serial);
-#  endif
-#  ifdef DEBUG_ESPMANAGER
-  man.setDebugger(&Serial);
-#  endif
+
+#ifdef DEBUGGER
+  dbg = &Serial;
 #endif
 
   //Reading configuration from json file
@@ -134,5 +138,4 @@ char *onGetConf(JsonVariant params) {
   char *retSettings = (char *)malloc(1000 * sizeof(char));
   strcpy(retSettings, settings);
   return retSettings;
-  //man.sendMsg("IOT/espTest/getconf", settings);
 };

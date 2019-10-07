@@ -1,12 +1,12 @@
-/*
-  ESPManager
+/* 
+
+  espManager
 
   Copyright (C) 2018 by Sergiu Toporjinschi <sergiu dot toporjinschi at gmail dot com>
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation, either version 3 of the License, or
-  (at your option) any later version.
+  the Free Software Foundation version 3.
 
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -14,26 +14,15 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  along with this program. If not, see <https://spdx.org/licenses/GPL-3.0-only.html>.
+
+  All rights reserved
 
 */
-#include "ESPManager.h"
 
-//=================[ DEBUG_ESPMANAGER ]================
-#ifdef DEBUG_ESPMANAGER
-#  define DBG(x)           \
-    this->debug->print(x); \
-    this->debug->flush();
-#  define DBGLN(x, ...)                                    \
-    this->debug->printf("[%s](%d): ", __FILE__, __LINE__); \
-    this->debug->printf(x, ##__VA_ARGS__);                 \
-    this->debug->println("");                              \
-    this->debug->flush();
-#else
-#  define DBG(X)
-#  define DBGLN(X, ...)
-#endif // DEBUG_ESPMANAGER
-//=================[ DEBUG_ESPMANAGER ]================
+#include "debug_macro.h"
+
+#include "ESPManager.h"
 
 ADC_MODE(ADC_VCC);
 
@@ -132,7 +121,7 @@ void ESPManager::waitForWiFi() {
   }
   int waitingTime = millis();
   while (WiFi.status() != WL_CONNECTED && millis() - waitingTime < 30000) {
-    DBG("#");
+    DBGLN("#");
     if (this->waitingWiFiCon != nullptr) {
       this->waitingWiFiCon();
     }
@@ -142,7 +131,6 @@ void ESPManager::waitForWiFi() {
     DBGLN("hasAfter");
     this->afterWaitingWiFiCon();
   }
-  //  DBGLN("");
   if (WiFi.status() != WL_CONNECTED) {
     debugWiFiStatus();
     ESP.restart();
@@ -180,7 +168,7 @@ void ESPManager::initDebugUDP() {
    Is printing connection status to WiFi if is not connected;
 */
 void ESPManager::debugWiFiStatus() {
-#ifdef DEBUG_ESPMANAGER
+#ifdef DEBUGGER
   int wiFiStatus = WiFi.status();
   DBGLN("WiFi status: %i, %s", wiFiStatus, wiFiStatus == WL_CONNECTED ? " CONNECTED" : (wiFiStatus == WL_CONNECT_FAILED ? " FAILED" : (wiFiStatus == WL_DISCONNECTED ? " DISCONNECTED" : (wiFiStatus == WL_CONNECTION_LOST ? " CONNECTION_LOST " : ""))));
 #endif
@@ -253,7 +241,7 @@ void ESPManager::connectToMQTT() {
     this->beforeWaitingMQTTCon();
   }
   while (!mqttCli.connect(clientId, user, password)) {
-    DBG("_");
+    DBGLN("_");
     if (this->waitingMQTTCon != nullptr) {
       this->waitingMQTTCon();
     }
@@ -303,7 +291,6 @@ void ESPManager::subscribeCMD() {
 void ESPManager::loopIt() {
   mqttCli.loop();
   delay(10);
-  //delay(settings.getInt("esp.delayTime"));  // <- fixes some issues with WiFi stability
 
   if (WiFi.status() != WL_CONNECTED || !mqttCli.connected()) {
     DBGLN("Not connected to MQTT reconnect ...");
@@ -394,7 +381,7 @@ void ESPManager::executeCommands(const char *topic, const char *payload) {
 }
 
 void ESPManager::addIncomingEventHandler(const char *topic, eventIncomingHandler handler) {
-#ifndef DEBUG_SERIAL
+#ifndef DEBUGER
   if (topic == nullptr) {
     DBGLN("To subscribe, topic is mandatory");
   }
@@ -528,12 +515,6 @@ void ESPManager::cmdUpdate(const char *respTopic, JsonVariant params) {
   }
 }
 // ---==[ END Commands ]==---
-
-#ifdef DEBUG_ESPMANAGER
-void ESPManager::setDebugger(Print *print) {
-  debug = print;
-}
-#endif //DEBUG_ESPMANAGER
 
 ESPManager::~ESPManager() {
   //  delete cbBind;

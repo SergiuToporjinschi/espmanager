@@ -1,12 +1,12 @@
-/*
-  ESPManager
+/* 
+
+  espManager
 
   Copyright (C) 2018 by Sergiu Toporjinschi <sergiu dot toporjinschi at gmail dot com>
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation, either version 3 of the License, or
-  (at your option) any later version.
+  the Free Software Foundation version 3.
 
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -14,9 +14,12 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  along with this program. If not, see <https://spdx.org/licenses/GPL-3.0-only.html>.
+
+  All rights reserved
 
 */
+
 #ifndef ESPManager_h
 #define ESPManager_h
 #include "Macro.h"
@@ -32,7 +35,6 @@
 
 #ifdef EM_UDP_DEBUG
 #  include <WiFiUdp.h>
-
 static const char DEUBG_UDP_MASK_P[] PROGMEM = "{\"Exception\":%d,\"flag\":%d,\"flagText\":\"%s\",\"epc1\":\"0x%08x\",\"epc2\":\"0x%08x\",\"epc3\":\"0x%08x\",\"excvaddr\":\"0x%08x\",\"depc\":\"0x%08x\"}";
 #endif
 
@@ -100,18 +102,11 @@ class ESPManager {
 
   void addCommand(const char *cmd, cmdFunction handler);
 
-#ifdef DEBUG_ESPMANAGER
-  void setDebugger(Print *print);
-#endif //DEBUG_ESPMANAGER
-
  private:
   const char *version = VER;
   const char *sketchVersion = nullptr;
   bool retainMsg = false;
   int qos = 0;
-#ifdef DEBUG_ESPMANAGER
-  Print *debug = &Serial;
-#endif //DEBUG_ESPMANAGER
 #ifdef EM_UDP_DEBUG
   WiFiUDP Udp;
   IPAddress udpDebugIP;
