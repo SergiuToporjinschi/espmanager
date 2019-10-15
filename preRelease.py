@@ -4,7 +4,7 @@ except ImportError:
     import ConfigParser as configparser
 import glob, shutil, os, sys
 
-print '########### Run release script ###########'
+print('########### Run release script ###########')
 
 config = configparser.ConfigParser()
 config.read("platformio.ini")
@@ -24,4 +24,4 @@ def createExamples():
 clearMainFile()
 createExamples()
 
-print '########### Finish release script ###########'
+print('########### Finish release script ###########')

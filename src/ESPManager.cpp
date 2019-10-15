@@ -24,11 +24,18 @@
 
 #include "ESPManager.h"
 
+#if defined(ARDUINO_ARCH_ESP32)
+#elif defined(ARDUINO_ARCH_ESP8266)
 ADC_MODE(ADC_VCC);
+#endif
 
 ESPManager::ESPManager() {
   mqttCli = *new MQTTClient(MQTT_BUFFER);
+#if defined(ARDUINO_ARCH_ESP8266)
   wifiMode = WIFI_STA;
+#elif defined(ARDUINO_ARCH_ESP32)
+  wifiMode = WIFI_STA;
+#endif
   cbBind = new Binding<String &, String &>(*this, &ESPManager::messageReceived);
 }
 
@@ -100,8 +107,12 @@ void ESPManager::connectToWifi() {
     DBGLN("Is already connected: %i", WiFi.status());
     return;
   }
+#if defined(ARDUINO_ARCH_ESP8266)
   WiFi.mode(wifiMode);
   WiFi.hostname(_wlanConf.getMember(F("hostName")).as<char *>());
+#elif defined(ARDUINO_ARCH_ESP32)
+  WiFi.mode(wifiMode);
+#endif
   delay(100);
   WiFi.begin(_wlanConf.getMember(F("ssid")).as<char *>(), _wlanConf.getMember(F("password")).as<char *>());
   waitForWiFi();
@@ -260,7 +271,10 @@ void ESPManager::disconnectWifi() {
   DBGLN("disconnectWifi");
   WiFi.disconnect();
   WiFi.mode(WIFI_OFF);
+#if defined(ARDUINO_ARCH_ESP8266)
   WiFi.forceSleepBegin();
+#elif defined(ARDUINO_ARCH_ESP32)
+#endif
   delay(100);
 };
 
@@ -435,7 +449,11 @@ void ESPManager::cmdReset(const char *respTopic, JsonVariant params) {
   DBGLN("cmdReset");
   mqttCli.disconnect();
   disconnectWifi();
+#if defined(ARDUINO_ARCH_ESP8266)
   ESP.reset();
+#elif defined(ARDUINO_ARCH_ESP32)
+  ESP.restart();
+#endif
 }
 
 /**
@@ -455,7 +473,11 @@ void ESPManager::cmdStatus(const char *respTopic, JsonVariant params) {
 */
 void ESPManager::cmdGetInfo(const char *respTopic, JsonVariant params) {
   DBGLN("cmdGetInfo");
+#if defined(ARDUINO_ARCH_ESP8266)
   String coreVersion = ESP.getCoreVersion();
+#elif defined(ARDUINO_ARCH_ESP32)
+  String coreVersion = "-";
+#endif
   coreVersion.replace("_", ".");
 
   char skVerBuf[90] = {0};
@@ -464,15 +486,22 @@ void ESPManager::cmdGetInfo(const char *respTopic, JsonVariant params) {
   }
 
   char retVal[600] = {0};
+#if defined(ARDUINO_ARCH_ESP8266)
   snprintf_P(retVal, 600, INFO_PATTERN_P, WiFi.hostname().c_str(), ESP.getChipId(), WiFi.localIP().toString().c_str(), String(WiFi.macAddress()).c_str(), WiFi.RSSI(), ESP.getResetReason().c_str(), ESP.getFlashChipId(), coreVersion.c_str(),
              ESP.getSdkVersion(), ESP.getVcc() / 1024.00f, ESP.getFlashChipSpeed() / 1000000, ESP.getCycleCount(), ESP.getCpuFreqMHz(), ESP.getFreeHeap(), ESP.getHeapFragmentation(), ESP.getMaxFreeBlockSize(), ESP.getFlashChipSize(), ESP.getSketchSize(),
              ESP.getFreeSketchSpace(), ESP.getFlashChipRealSize(), version, skVerBuf);
+#elif defined(ARDUINO_ARCH_ESP32)
+  snprintf_P(retVal, 600, INFO_PATTERN_P, '-', ESP.getChipRevision(), WiFi.localIP().toString().c_str(), String(WiFi.macAddress()).c_str(), WiFi.RSSI(), '-', -1, coreVersion.c_str(),
+             ESP.getSdkVersion(), -1.0f, ESP.getFlashChipSpeed() / 1000000, ESP.getCycleCount(), ESP.getCpuFreqMHz(), ESP.getFreeHeap(), -1, ESP.getMaxAllocHeap(), ESP.getFlashChipSize(), ESP.getSketchSize(),
+             ESP.getFreeSketchSpace(), ESP.getFlashChipSize(), version, skVerBuf);
+#endif
 
   int qos = _mqttConf.getMember(F("qos")).as<int>();
   mqttCli.publish(respTopic, retVal, false, qos);
 }
 
 void ESPManager::cmdUpdate(const char *respTopic, JsonVariant params) {
+#if defined(ARDUINO_ARCH_ESP8266)
   DBGLN("Update triggered");
   if (params.isNull())
     return;
@@ -513,6 +542,7 @@ void ESPManager::cmdUpdate(const char *respTopic, JsonVariant params) {
     }
     break;
   }
+#endif
 }
 // ---==[ END Commands ]==---
 

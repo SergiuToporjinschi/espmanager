@@ -25,8 +25,12 @@
 #include "Macro.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#include <ESP8266WiFi.h>
-#include <ESP8266httpUpdate.h>
+#if defined(ARDUINO_ARCH_ESP32)
+#  include <WiFi.h>
+#elif defined(ARDUINO_ARCH_ESP8266)
+#  include <ESP8266WiFi.h>
+#  include <ESP8266httpUpdate.h>
+#endif
 #include <MQTTClient.h>
 #include <functional>
 #include <map>
@@ -125,7 +129,11 @@ class ESPManager {
   JsonObject _wlanConf;     //WLAN settings
   JsonObject _mqttConf;     //MQTT settings
   MQTTClient mqttCli;       //MQTT client engine
-  WiFiMode wifiMode;        //WiFi Engine
+#if defined(ARDUINO_ARCH_ESP32)
+  wifi_mode_t wifiMode; //WiFi Engine
+#elif defined(ARDUINO_ARCH_ESP8266)
+  WiFiMode wifiMode; //WiFi Engine
+#endif
 
   bool sendOfflineStatus;         //Sends a retain message for registering stauts
   const char *cmdTopic = nullptr; //topic for receving commands
