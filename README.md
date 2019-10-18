@@ -233,3 +233,4 @@ Will return json with following info in topic `configurationJSON.mqtt.topics.cmd
   }
 }
 ```
+.
