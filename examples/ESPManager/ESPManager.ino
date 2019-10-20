@@ -27,7 +27,6 @@ Print *dbg = &Serial;
 
 #include "ESPManager.h"
 #include "SettingsManager.h"
-#include "SoftwareSerial.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
 

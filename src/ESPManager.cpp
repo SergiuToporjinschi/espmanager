@@ -476,7 +476,7 @@ void ESPManager::cmdGetInfo(const char *respTopic, JsonVariant params) {
 #if defined(ARDUINO_ARCH_ESP8266)
   String coreVersion = ESP.getCoreVersion();
 #elif defined(ARDUINO_ARCH_ESP32)
-  String coreVersion = "-";
+  String coreVersion = (String)"-";
 #endif
   coreVersion.replace("_", ".");
 
