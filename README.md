@@ -233,3 +233,44 @@ Will return json with following info in topic `configurationJSON.mqtt.topics.cmd
   }
 }
 ```
+#include <ArduinoJson.h>
+#include "ESPManager.h"
+#include "SettingsManager.h"
+
+char * readTemp(const char * msg);
+SettingsManager conf;
+ESPManager man;
+
+void setup() {
+  Serial.begin(115200);
+  //Reading configuration from json file
+  conf.readSettings("/settings.json");
+  //Splitting settings in wlanConf and MqttConf
+  JsonObject wlanConf = conf.getJsonObject("wlan");
+  JsonObject mqttConf = conf.getJsonObject("mqtt");
+  //Setting scketch ino verion
+  man.setSketchVersion("1.0.0");
+  //Creating connection to wlan and mqtt
+  man.createConnections(wlanConf, mqttConf);
+  //Add listener on IOT/espTest/inc
+  man.addIncomingEventHandler("IOT/espTest/inc", onCall);
+  //Adding timout trigger
+  man.addTimerOutputEventHandler("IOT/espTest/out", 2000, readTemp);
+  //Send instant message on IOT/espTest/out
+  man.sendMsg("IOT/espTest/out", "test");
+}
+
+void loop() {
+  man.loopIt();
+}
+
+char * readTemp(const char * msg) {
+  //Allocate memory, will be freed by manager
+  char * ret = (char *) malloc(25 * sizeof(char));
+  strcpy(ret, "{temp:39, humidity: 75}");
+  return ret;
+};
+
+void onCall(const char * msg) {
+  Serial.println(msg);
+};
