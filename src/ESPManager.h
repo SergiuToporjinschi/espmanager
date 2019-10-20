@@ -202,7 +202,9 @@ class ESPManager {
   void cmdGetInfo(const char *respTopic, JsonVariant params);
   void cmdUpdate(const char *respTopic, JsonVariant params);
   void cmdStatus(const char *respTopic, JsonVariant params);
-
+#ifdef UNITY
+ public:
+#endif
   void readconfiguration();
   void reconnect();
   void messageReceived(String &topic, String &payload);

@@ -8,3 +8,5 @@
 .vscode/launch.json
 data/*
 src/main.cpp
+test/**/*.*
+!test/*test*
