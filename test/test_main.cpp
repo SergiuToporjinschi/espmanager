@@ -27,6 +27,10 @@
 ESPManager man;
 SettingsManager conf;
 
+static int beforeWainting = 0;
+static int wainting = 0;
+static int afterWainting = 0;
+
 void test_connection() {
   //Splitting settings in wlanConf and MqttConf
   JsonObject wlanConf = conf.getJsonObject("wlan");
@@ -34,18 +38,15 @@ void test_connection() {
   JsonObject nullWlanConf;
   JsonObject nullMqttConf;
 
-  int beforeWainting = 0;
-  int wainting = 0;
-  int afterWainting = 0;
 
-  man.onBeforeWaitingWiFiCon([&beforeWainting]() {
+  man.onBeforeWaitingWiFiCon([&]() mutable{
     beforeWainting++;
   });
 
-  man.onWaitingWiFiCon([&wainting]() {
+  man.onWaitingWiFiCon([&]() mutable {
     wainting++;
   });
-  man.onAfterWaitingWiFiCon([&afterWainting]() {
+  man.onAfterWaitingWiFiCon([&]() mutable{
     afterWainting++;
   });
 
@@ -53,21 +54,33 @@ void test_connection() {
   TEST_ASSERT_MESSAGE(ESPManConnStatus::INVLIAD_MQTT_CONF == man.createConnections(wlanConf, nullMqttConf), "Wrong status return for invalind MQTT configuration");
   TEST_ASSERT_MESSAGE(ESPManConnStatus::CONNECTION_OK == man.createConnections(wlanConf, mqttConf), "Could not connect");
   
+}
+
+void test_connectionListeners() {
   TEST_ASSERT_GREATER_OR_EQUAL_INT_MESSAGE(1, beforeWainting, "onBeforeWaitingWiFiCon method was not called");
   TEST_ASSERT_GREATER_OR_EQUAL_INT_MESSAGE(1, wainting, "onWaitingWiFiCon method was not called");
   TEST_ASSERT_GREATER_OR_EQUAL_INT_MESSAGE(1, afterWainting, "onAfterWaitingWiFiCon method was not called");
 }
 
-void test_connectionListeners() {
-}
-
 void test_incommingMessages() {
   int call = 0;
-  man.addIncomingEventHandler("incommingTopic", [&call](const char *msg) {
+  man.addIncomingEventHandler("incommingTopic", [&](const char *msg) mutable {
     call++;
   });
   String topic = "incommingTopic";
   String msg = "msg";
+  man.messageReceived(topic, msg);
+  TEST_ASSERT_GREATER_OR_EQUAL_INT_MESSAGE(1, call, "incommingTopic was not called");
+}
+
+void test_timeoutMessages() {
+  int call = 0;
+  man.addTimerOutputEventHandler("timerTestEventTopic", 10,[] (const char * value) -> char *{
+    char x[50] = "calledMethod";
+    return x;
+  });
+  String topic = "incommingTopic";
+  String msg = "msg";l
   man.messageReceived(topic, msg);
   TEST_ASSERT_GREATER_OR_EQUAL_INT_MESSAGE(1, call, "incommingTopic was not called");
 }
@@ -80,6 +93,7 @@ void setup() {
   RUN_TEST(test_connection);
   RUN_TEST(test_connectionListeners);
   RUN_TEST(test_incommingMessages);
+  RUN_TEST(test_timeoutMessages);
   UNITY_END();
 }
 
