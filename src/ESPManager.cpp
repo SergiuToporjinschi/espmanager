@@ -24,18 +24,13 @@
 
 #include "ESPManager.h"
 
-#if defined(ARDUINO_ARCH_ESP32)
-#elif defined(ARDUINO_ARCH_ESP8266)
+#if defined(ARDUINO_ARCH_ESP8266)
 ADC_MODE(ADC_VCC);
 #endif
 
 ESPManager::ESPManager() {
   mqttCli = *new MQTTClient(MQTT_BUFFER);
-#if defined(ARDUINO_ARCH_ESP8266)
   wifiMode = WIFI_STA;
-#elif defined(ARDUINO_ARCH_ESP32)
-  wifiMode = WIFI_STA;
-#endif
   cbBind = new Binding<String &, String &>(*this, &ESPManager::messageReceived);
 }
 
@@ -491,7 +486,7 @@ void ESPManager::cmdGetInfo(const char *respTopic, JsonVariant params) {
              ESP.getSdkVersion(), ESP.getVcc() / 1024.00f, ESP.getFlashChipSpeed() / 1000000, ESP.getCycleCount(), ESP.getCpuFreqMHz(), ESP.getFreeHeap(), ESP.getHeapFragmentation(), ESP.getMaxFreeBlockSize(), ESP.getFlashChipSize(), ESP.getSketchSize(),
              ESP.getFreeSketchSpace(), ESP.getFlashChipRealSize(), version, skVerBuf);
 #elif defined(ARDUINO_ARCH_ESP32)
-  snprintf_P(retVal, 600, INFO_PATTERN_P, '-', ESP.getChipRevision(), WiFi.localIP().toString().c_str(), String(WiFi.macAddress()).c_str(), WiFi.RSSI(), '-', -1, coreVersion.c_str(),
+  snprintf_P(retVal, 600, INFO_PATTERN_P, "-", ESP.getChipRevision(), WiFi.localIP().toString().c_str(), String(WiFi.macAddress()).c_str(), WiFi.RSSI(), "-", -1, coreVersion.c_str(),
              ESP.getSdkVersion(), -1.0f, ESP.getFlashChipSpeed() / 1000000, ESP.getCycleCount(), ESP.getCpuFreqMHz(), ESP.getFreeHeap(), -1, ESP.getMaxAllocHeap(), ESP.getFlashChipSize(), ESP.getSketchSize(),
              ESP.getFreeSketchSpace(), ESP.getFlashChipSize(), version, skVerBuf);
 #endif
