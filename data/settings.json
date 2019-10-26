@@ -1,0 +1,30 @@
+{
+  "wlan": {
+    "hostName": "espTest",
+    "ssid": "zDay4Dev",
+    "password": "WiFi4SysLoftDev",
+    "debugUDP": {
+      "enabled": true,
+      "server": "192.168.100.60",
+      "port": "4210"
+    }
+  },
+  "mqtt": {
+    "clientId": "SkyNet-mqttTestUser",
+    "server": "192.168.100.60",
+    "port": "1888",
+    "user": "mqttTestUser",
+    "password": "mqttTestUser",
+    "sendOfflineStatus": true,
+    "retainMessage": true,
+    "qos": 0,
+    "topics": {
+      "cmd": "unitTest/espTest/cmd",
+      "status": "unitTest/espTest/status"
+    }
+  },
+  "otherKeys": {
+    "topic": "unitTest/espTest/sc",
+    "interval": 1000
+  }
+}
