@@ -403,7 +403,7 @@ void ESPManager::addIncomingEventHandler(const char *topic, eventIncomingHandler
 };
 
 void ESPManager::addTimerOutputEventHandler(const char *topic, unsigned long loopTime, outputTimerHandler handler) {
-  outputEvents[topic] = {handler, loopTime, 0};
+  outputEvents[topic] = {handler, loopTime, millis()};
 }
 
 void ESPManager::sendMsg(const char *topic, const char *msg, bool retain, int qos) {
