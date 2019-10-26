@@ -4,7 +4,7 @@
 [![GitHub watchers](https://img.shields.io/github/watchers/SergiuToporjinschi/espmanager.svg)](https://github.com/SergiuToporjinschi/espmanager/watchers)
 [![GitHub license](https://img.shields.io/github/license/SergiuToporjinschi/espmanager.svg)](https://github.com/SergiuToporjinschi/espmanager/blob/master/LICENSE)
 [![Code Climate](https://codeclimate.com/github/codeclimate/codeclimate/badges/gpa.svg)](https://codeclimate.com/github/SergiuToporjinschi/espmanager)
-
+[![Build Status](https://travis-ci.org/SergiuToporjinschi/espmanager.svg?branch=master)](https://travis-ci.org/SergiuToporjinschi/espmanager)
 # ESPManager
 A wrapper over Wifi and MQTT.
 
