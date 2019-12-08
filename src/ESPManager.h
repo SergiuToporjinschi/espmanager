@@ -1,4 +1,4 @@
-/* 
+/*
 
   espManager
 
@@ -39,7 +39,7 @@
 
 #ifdef EM_UDP_DEBUG
 #  include <WiFiUdp.h>
-static const char DEUBG_UDP_MASK_P[] PROGMEM = "{\"Exception\":%d,\"flag\":%d,\"flagText\":\"%s\",\"epc1\":\"0x%08x\",\"epc2\":\"0x%08x\",\"epc3\":\"0x%08x\",\"excvaddr\":\"0x%08x\",\"depc\":\"0x%08x\"}";
+static const char DEUBG_UDP_MASK_P[] PROGMEM = "{\"Exception\":%d,\"flag\":%d,\"flagText\":\"%s\",\"epc1\":\"0x%08x\",\"epc2\":\"0x%08x\",\"epc3\":\"0x%08x\",\"excvaddr\":\"0x%08x\",\"depc\":\"0x%08x\", \"devIp\":\"%s\"}";
 #endif
 
 static const char STATUS_FORMAT_P[] PROGMEM = "{\"name\":\"%s\", \"status\":\"%s\"}";
@@ -182,6 +182,7 @@ class ESPManager {
   void createConnections();
 
 #ifdef EM_UDP_DEBUG
+  boolean isDebugUDPEnable(JsonVariant debugUdp);
   void initDebugUDP();
 #endif
 

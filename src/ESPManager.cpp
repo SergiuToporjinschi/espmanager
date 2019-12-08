@@ -1,4 +1,4 @@
-/* 
+/*
 
   espManager
 
@@ -145,15 +145,18 @@ void ESPManager::waitForWiFi() {
 }
 
 #ifdef EM_UDP_DEBUG
-void ESPManager::initDebugUDP() {
-  DBGLN("UDP DEBUG:");
-  JsonVariant debugUdp = _wlanConf.getMember(F("debugUDP"));
-  if (WiFi.status() == WL_CONNECTED &&
+boolean ESPManager::isDebugUDPEnable(JsonVariant debugUdp) {
+  return WiFi.status() == WL_CONNECTED &&
       !debugUdp.isNull() &&
       !debugUdp.getMember(F("enabled")).isNull() &&
       debugUdp.getMember(F("enabled")).as<boolean>() &&
       !debugUdp.getMember(F("server")).isNull() &&
-      !debugUdp.getMember(F("port")).isNull()) {
+      !debugUdp.getMember(F("port")).isNull();
+}
+void ESPManager::initDebugUDP() {
+  DBGLN("UDP DEBUG:");
+  JsonVariant debugUdp = _wlanConf.getMember(F("debugUDP"));
+  if (isDebugUDPEnable(debugUdp)) {
 
     udpDebugIP.fromString(debugUdp.getMember(F("server")).as<char *>());
     udpDebugPort = debugUdp.getMember(F("port")).as<unsigned short>();
@@ -161,7 +164,16 @@ void ESPManager::initDebugUDP() {
     DBGLN("ip: %s", udpDebugIP.toString().c_str());
     rst_info *resetInfo = ESP.getResetInfoPtr();
     char buff[200] = {0};
-    sprintf_P(&buff[0], DEUBG_UDP_MASK_P, resetInfo->exccause, resetInfo->reason, (resetInfo->reason == 0 ? "DEFAULT" : resetInfo->reason == 1 ? "WDT" : resetInfo->reason == 2 ? "EXCEPTION" : resetInfo->reason == 3 ? "SOFT_WDT" : resetInfo->reason == 4 ? "SOFT_RESTART" : resetInfo->reason == 5 ? "DEEP_SLEEP_AWAKE" : resetInfo->reason == 6 ? "EXT_SYS_RST" : "???"), resetInfo->epc1, resetInfo->epc2, resetInfo->epc3, resetInfo->excvaddr, resetInfo->depc);
+    sprintf_P(&buff[0], DEUBG_UDP_MASK_P,
+    resetInfo->exccause,
+    resetInfo->reason,
+    (resetInfo->reason == 0 ? "DEFAULT" : resetInfo->reason == 1 ? "WDT" : resetInfo->reason == 2 ? "EXCEPTION" : resetInfo->reason == 3 ? "SOFT_WDT" : resetInfo->reason == 4 ? "SOFT_RESTART" : resetInfo->reason == 5 ? "DEEP_SLEEP_AWAKE" : resetInfo->reason == 6 ? "EXT_SYS_RST" : "???"),
+    resetInfo->epc1,
+    resetInfo->epc2,
+    resetInfo->epc3,
+    resetInfo->excvaddr,
+    resetInfo->depc,
+    WiFi.localIP().toString().c_str());
     if (Udp.beginPacket(udpDebugIP, udpDebugPort)) {
       Udp.write(buff);
       Udp.endPacket();
@@ -453,7 +465,7 @@ void ESPManager::cmdReset(const char *respTopic, JsonVariant params) {
 
 /**
  * CMD: status
- * Is seding current online message, if it receives the request then it'a alive; 
+ * Is seding current online message, if it receives the request then it'a alive;
  */
 void ESPManager::cmdStatus(const char *respTopic, JsonVariant params) {
   DBGLN("Status triggered");
